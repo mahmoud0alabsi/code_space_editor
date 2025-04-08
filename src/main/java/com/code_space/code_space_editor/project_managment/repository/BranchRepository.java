@@ -11,4 +11,6 @@ import com.code_space.code_space_editor.project_managment.entity.sql.Branch;
 public interface BranchRepository extends JpaRepository<Branch, Long> {
     Branch findByIdAndProjectId(Long branchId, Long projectId);
     List<Branch> findByProjectId(Long projectId);
+
+    boolean existsByNameAndProjectId(String name, Long projectId);
 }

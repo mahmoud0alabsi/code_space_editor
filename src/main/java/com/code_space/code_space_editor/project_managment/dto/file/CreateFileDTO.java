@@ -5,10 +5,12 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class CreateFileDTO {
     @NotNull(message = "File name cannot be null")
     @Size(min = 1, max = 255, message = "File name must be between 1 and 255 characters")
@@ -22,4 +24,6 @@ public class CreateFileDTO {
     @Size(min = 1, max = 10, message = "File extension must be between 1 and 10 characters")
     private String extension;
 
+    @NotNull(message = "File content cannot be null")
+    private String content;
 }

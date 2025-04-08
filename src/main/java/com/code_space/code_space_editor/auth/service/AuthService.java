@@ -10,7 +10,10 @@ import com.code_space.code_space_editor.auth.dto.*;
 import com.code_space.code_space_editor.auth.entity.Role;
 import com.code_space.code_space_editor.auth.entity.User;
 import com.code_space.code_space_editor.auth.repository.UserRepository;
+import com.code_space.code_space_editor.exceptions.InvalidRefreshTokenException;
 
+import io.jsonwebtoken.JwtException;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -23,6 +26,7 @@ public class AuthService {
         private final RefreshTokenService tokenService;
         private final AuthenticationManager authenticationManager;
 
+        @Transactional
         public void register(RegisterRequest request) {
                 var user = User.builder()
                                 .username(request.getUsername())
@@ -34,6 +38,7 @@ public class AuthService {
                 userRepository.save(user);
         }
 
+        @Transactional
         public AuthResponse login(LoginRequest request) {
                 try {
                         authenticationManager.authenticate(
@@ -52,32 +57,40 @@ public class AuthService {
                         tokenService.saveRefreshToken(user, refreshToken);
 
                         return new AuthResponse(accessToken, refreshToken);
+                } catch (JwtException e) {
+                        throw new InvalidRefreshTokenException("Invalid or expired refresh token", e);
                 } catch (Exception e) {
                         throw new UsernameNotFoundException("Invalid username or password", e);
                 }
         }
 
+        @Transactional
         public AuthResponse refreshToken(RefreshTokenRequest request) {
-                String refreshToken = request.getRefreshToken();
-                String username = jwtService.extractUsername(refreshToken);
+                try {
+                        String refreshToken = request.getRefreshToken();
+                        String username = jwtService.extractUsername(refreshToken);
 
-                var user = userRepository.findByUsername(username)
-                                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                        var user = userRepository.findByUsername(username)
+                                        .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-                var storedToken = tokenService.getValidRefreshToken(refreshToken)
-                                .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
+                        var storedToken = tokenService.getValidRefreshToken(refreshToken)
+                                        .orElseThrow(() -> new InvalidRefreshTokenException(
+                                                        "Invalid or expired refresh token"));
 
-                // Invalidate old token (rotation)
-                storedToken.setExpired(true);
-                storedToken.setRevoked(true);
-                tokenService.save(storedToken);
+                        // Invalidate old token (rotation)
+                        storedToken.setExpired(true);
+                        storedToken.setRevoked(true);
+                        tokenService.save(storedToken);
 
-                // Generate new tokens
-                String newAccessToken = jwtService.generateAccessToken(user);
-                String newRefreshToken = jwtService.generateRefreshToken(user);
+                        // Generate new tokens
+                        String newAccessToken = jwtService.generateAccessToken(user);
+                        String newRefreshToken = jwtService.generateRefreshToken(user);
 
-                tokenService.saveRefreshToken(user, newRefreshToken);
+                        tokenService.saveRefreshToken(user, newRefreshToken);
 
-                return new AuthResponse(newAccessToken, newRefreshToken);
+                        return new AuthResponse(newAccessToken, newRefreshToken);
+                } catch (Exception e) {
+                        throw new InvalidRefreshTokenException("Invalid refresh token", e);
+                }
         }
 }

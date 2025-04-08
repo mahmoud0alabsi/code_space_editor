@@ -1,6 +1,7 @@
 package com.code_space.code_space_editor.project_managment.dto.file;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -8,11 +9,8 @@ import lombok.AllArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateFileVersionDTO {
-    @NotNull(message = "File content cannot be null")
-    private String content;
-
-    @NotNull(message = "Message cannot be null")
-    private String message;
-
+public class UpdateInfoFileDTO {
+    @NotNull(message = "File name cannot be null")
+    @Size(min = 1, max = 255, message = "File name must be between 1 and 255 characters")
+    private String name;
 }

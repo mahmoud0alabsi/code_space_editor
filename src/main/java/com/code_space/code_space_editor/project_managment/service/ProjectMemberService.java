@@ -9,11 +9,10 @@ import com.code_space.code_space_editor.project_managment.entity.sql.Project;
 import com.code_space.code_space_editor.project_managment.entity.sql.ProjectMember;
 import com.code_space.code_space_editor.project_managment.repository.ProjectMemberRepository;
 
-import jakarta.transaction.Transactional;
-
 import com.code_space.code_space_editor.exceptions.ResourceNotFoundException;
 import com.code_space.code_space_editor.project_managment.repository.ProjectRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -24,35 +23,26 @@ public class ProjectMemberService {
 
     @Transactional
     public ProjectMember add(Long projectId, Long userId, ProjectRole role) {
-        // Check if the project exists
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
-        // Check if the user is already a member of the project
         if (projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
             throw new ResourceNotFoundException("User is already a member of the project");
         }
 
-        // Create a new ProjectMember entity
-        ProjectMember member = new ProjectMember();
-        member.setProject(project);
-        member.setUserId(userId);
-        member.setRole(role);
+        ProjectMember member = ProjectMember.builder()
+                .project(project)
+                .userId(userId)
+                .role(role)
+                .build();
         return projectMemberRepository.save(member);
     }
 
     @Transactional
-    public List<ProjectMember> getAllByProjectId(Long projectId) {
-        return projectMemberRepository.findAllByProjectId(projectId);
-    }
-
-    @Transactional
     public void removeMemberFromProject(Long projectId, Long memberId) {
-        // Find the member to remove
         ProjectMember member = projectMemberRepository.findByProjectIdAndUserId(projectId, memberId)
                 .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
 
-        // Remove the member from the project
         projectMemberRepository.delete(member);
     }
 
@@ -62,8 +52,12 @@ public class ProjectMemberService {
                 .findByProjectIdAndUserId(projectId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Member not found"));
 
-        // Update the role
         currentMember.setRole(role);
         return projectMemberRepository.save(currentMember);
     }
+
+    public List<ProjectMember> getAllMembers(Long projectId) {
+        return projectMemberRepository.findAllByProjectId(projectId);
+    }
+
 }

@@ -40,5 +40,5 @@ public class Project {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference
-    private List<ProjectMember> projectMembers;
+    private List<ProjectMember> members;
 }

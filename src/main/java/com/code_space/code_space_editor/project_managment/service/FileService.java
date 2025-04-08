@@ -1,20 +1,23 @@
 package com.code_space.code_space_editor.project_managment.service;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.code_space.code_space_editor.project_managment.entity.sql.FileVersion;
 import com.code_space.code_space_editor.auth.utility.AuthUtils;
 import com.code_space.code_space_editor.project_managment.entity.sql.Branch;
 import com.code_space.code_space_editor.project_managment.entity.sql.File;
-import com.code_space.code_space_editor.project_managment.repository.BranchRepository;
 import com.code_space.code_space_editor.project_managment.repository.FileRepository;
 import com.code_space.code_space_editor.exceptions.FileStorageException;
-import com.code_space.code_space_editor.exceptions.ResourceNotFoundException;
+import com.code_space.code_space_editor.project_managment.dto.file.CreateFileDTO;
+import com.code_space.code_space_editor.project_managment.dto.file.FileDTO;
+import com.code_space.code_space_editor.project_managment.entity.sql.Commit;
+import com.code_space.code_space_editor.project_managment.mapper.FileMapper;
 import com.code_space.code_space_editor.project_managment.service.interfaces.FileServiceInterface;
-import com.code_space.code_space_editor.project_managment.service.interfaces.FileVersionServiceInterface;
+import com.code_space.code_space_editor.project_managment.service.interfaces.FileStorageServiceInterface;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -23,78 +26,71 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class FileService implements FileServiceInterface {
     private final FileRepository fileRepository;
-    private final BranchRepository branchRepository;
-    private final FileVersionServiceInterface fileVersionService;
+    private final FileStorageServiceInterface fileStorageService;
+    private final FileMapper fileMapper;
     private final AuthUtils authUtils;
 
     @Override
-    public List<File> getByBranch(Long branchId) {
-        return fileRepository.findByBranchId(branchId);
+    public List<File> getByCommit(Long commitId) {
+        return fileRepository.findByCommitId(commitId);
     }
 
     @Override
     @Transactional
-    public File createFile(Long projectId, Long branchId, String fileName, String language, String extension) {
-        Branch branch = getBranchOrThrow(branchId);
-        validateFileUniqueness(branchId, fileName);
-
-        File file = buildNewFile(branch, fileName, language, extension);
+    public File createFile(Long projectId, Branch branch, Commit commit, CreateFileDTO fileDTO) {
+        File file = buildNewFile(branch, commit, fileDTO);
         File savedFile = fileRepository.save(file);
 
-        fileVersionService.createNewVersion(projectId, branchId, savedFile, "", "Initial commit", 0L);
+        String filePath = fileStorageService.storeFile(projectId, branch.getId(), commit.getId(), file.getId(),
+                fileDTO.getContent(), fileDTO.getExtension());
+
+        savedFile.setPath(filePath);
+        savedFile = fileRepository.save(savedFile);
+
         return savedFile;
     }
 
     @Override
     @Transactional
-    public File updateFileInfo(Long fileId, String name, String language, String extension) {
+    public File updateFileInfo(Long fileId, String name) {
         File file = getFileOrThrow(fileId);
-        updateFileProperties(file, name, language, extension);
+        file.setName(name);
+        file.setUpdatedAt(Instant.now());
         return fileRepository.save(file);
     }
 
     @Override
-    @Transactional
-    public FileVersion createFileVersion(Long fileId, String newContent, String message) {
-        File file = getFileOrThrow(fileId);
-        updateFileVersionInfo(file);
-        fileRepository.save(file);
-
-        return fileVersionService.createNewVersion(
-                file.getBranch().getProject().getId(),
-                file.getBranch().getId(),
-                file,
-                newContent,
-                message,
-                file.getVersionsCount());
-    }
-
-    @Override
-    public List<File> getAllByBranchId(Long branchId) {
-        Branch branch = getBranchOrThrow(branchId);
-        return fileRepository.findByBranchId(branch.getId());
-    }
-
-    @Override
-    public List<FileVersion> getAllFileVersions(Long fileId) {
-        getFileOrThrow(fileId); // Validate file exists
-        return fileVersionService.getFileVersions(fileId);
+    public List<File> getAllByCommitId(Long commitId) {
+        return fileRepository.findByCommitId(commitId);
     }
 
     @Override
     @Transactional
-    public List<File> forkFiles(Long branchId, Branch newBranch) {
-        List<File> originalFiles = fileRepository.findByBranchId(branchId);
-        Long userId = authUtils.getCurrentUserId();
+    public void forkFiles(Long projectId, Long branhcId, Commit baseCommit, Commit newCommit) {
+        List<File> originalFiles = fileRepository.findByCommitId(baseCommit.getId());
 
-        originalFiles.forEach(file -> forkSingleFile(file, newBranch, userId));
-        return fileRepository.findByBranchId(newBranch.getId());
+        System.out.println("Forking files from commit: " + baseCommit.getId() + " to commit: " + newCommit.getId());
+        System.out.println("Original files: " + originalFiles.size());
+
+        originalFiles.forEach(file -> forkSingleFile(projectId, branhcId, file, newCommit));
     }
 
-    // Helper methods
-    private Branch getBranchOrThrow(Long branchId) {
-        return branchRepository.findById(branchId)
-                .orElseThrow(() -> new ResourceNotFoundException("Branch not found"));
+    @Transactional
+    public List<FileDTO> getFilesByCommitId(Long commitId, boolean includeContent) {
+        List<File> files = getByCommit(commitId);
+        if (files.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return files.stream()
+                .map(file -> {
+                    FileDTO dto = fileMapper.toDTO(file);
+                    if (includeContent) {
+                        dto.setContent(fileStorageService.readFile(file.getPath()));
+                    }
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 
     private File getFileOrThrow(Long fileId) {
@@ -102,79 +98,64 @@ public class FileService implements FileServiceInterface {
                 .orElseThrow(() -> new FileStorageException("File not found"));
     }
 
-    private void validateFileUniqueness(Long branchId, String fileName) {
-        if (fileRepository.existsByBranchIdAndName(branchId, fileName)) {
+    private void validateFileUniqueness(Long commitId, String fileName) {
+        if (fileRepository.existsByCommitIdAndName(commitId, fileName)) {
             throw new FileStorageException("File already exists in this branch with the same name");
         }
     }
 
-    private File buildNewFile(Branch branch, String fileName, String language, String extension) {
+    private File buildNewFile(Branch branch, Commit commit, CreateFileDTO fileDTO) {
+        validateFileUniqueness(commit.getId(), fileDTO.getName());
+        System.out.println("Creating new file: " + fileDTO.getName() + " in commit: " + commit.getId());
         File file = new File();
         file.setBranch(branch);
-        file.setCreatedBy(authUtils.getCurrentUserId());
-        file.setName(fileName);
-        file.setExtension(extension);
-        file.setLanguage(language);
+        file.setCommit(commit);
+        file.setAuthor(authUtils.getCurrentUserId());
+        file.setName(fileDTO.getName());
+        file.setExtension(fileDTO.getExtension());
+        file.setLanguage(fileDTO.getLanguage());
+        file.setPath(null);
         file.setCreatedAt(Instant.now());
-        file.setVersionsCount(0L);
         return file;
     }
 
-    private void updateFileProperties(File file, String name, String language, String extension) {
-        file.setName(name);
-        file.setLanguage(language);
-        file.setExtension(extension);
-    }
-
-    private void updateFileVersionInfo(File file) {
-        file.setUpdatedAt(Instant.now());
-        file.setVersionsCount(file.getVersionsCount() + 1);
-    }
-
-    private void forkSingleFile(File file, Branch newBranch, Long userId) {
+    @Transactional
+    private void forkSingleFile(Long projectId, Long branchId, File baseFile, Commit newCommit) {
         try {
-            FileVersion latestVersion = fileVersionService.getLatestVersion(file.getId());
-            String content = fileVersionService.readFileVersionContent(latestVersion);
+            String content = fileStorageService.readFile(baseFile.getPath());
+            System.out.println("Forking file: " + baseFile.getName() + " with content: " + content);
+            CreateFileDTO fileDTO = CreateFileDTO.builder()
+                    .name(baseFile.getName())
+                    .extension(baseFile.getExtension())
+                    .language(baseFile.getLanguage())
+                    .content(content)
+                    .build();
 
-            File newFile = createForkedFile(file, newBranch, userId);
+            File newFile = buildNewFile(
+                    newCommit.getBranch(),
+                    newCommit,
+                    fileDTO);
+
             File savedFile = fileRepository.save(newFile);
 
-            fileVersionService.createNewVersion(
-                    newBranch.getProject().getId(),
-                    newBranch.getId(),
-                    savedFile,
-                    content,
-                    "Forked from another branch",
-                    0L);
+            String filePath = fileStorageService.storeFile(projectId, branchId, newCommit.getId(),
+                    savedFile.getId(),
+                    fileDTO.getContent(), fileDTO.getExtension());
+
+            savedFile.setPath(filePath);
+            fileRepository.save(savedFile);
         } catch (Exception e) {
-            // Log error and continue with next file
-            // Consider adding proper logging
+            throw new FileStorageException("Error forking file: " + e.getMessage(), e);
         }
     }
 
-    private File createForkedFile(File original, Branch newBranch, Long userId) {
-        File newFile = new File();
-        newFile.setBranch(newBranch);
-        newFile.setCreatedBy(userId);
-        newFile.setName(original.getName());
-        newFile.setExtension(original.getExtension());
-        newFile.setLanguage(original.getLanguage());
-        newFile.setCreatedAt(Instant.now());
-        newFile.setVersionsCount(0L);
-        return newFile;
+    @Override
+    public String getFileContent(File file) {
+        return fileStorageService.readFile(file.getPath());
     }
 
     @Override
     public String getFileContent(Long fileId) {
-        getFileOrThrow(fileId);
-        FileVersion latestVersion = fileVersionService.getLatestVersion(fileId);
-        return fileVersionService.readFileVersionContent(latestVersion);
-    }
-
-    @Override
-    public String getSpecificVersionContent(Long fileId, Long versionNumber) {
-        getFileOrThrow(fileId);
-        FileVersion specificVersion = fileVersionService.getVersionByFileIdAndVersionNumber(fileId, versionNumber);
-        return fileVersionService.readFileVersionContent(specificVersion);
+        return getFileContent(getFileOrThrow(fileId));
     }
 }

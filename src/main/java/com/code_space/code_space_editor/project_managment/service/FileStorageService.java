@@ -21,9 +21,9 @@ public class FileStorageService implements FileStorageServiceInterface {
     private String ROOT_DIR;
 
     @Override
-    public String storeFile(Long projectId, Long branchId, Long fileId, Long versionNumber,
+    public String storeFile(Long projectId, Long branchId, Long commitId, Long fileId,
             String content, String extension) {
-        Path filePath = buildFilePath(projectId, branchId, fileId, versionNumber, extension);
+        Path filePath = buildFilePath(projectId, branchId, commitId, fileId, extension);
 
         try {
             Files.createDirectories(filePath.getParent());
@@ -44,8 +44,8 @@ public class FileStorageService implements FileStorageServiceInterface {
     }
 
     @Override
-    public void deleteFile(Long projectId, Long branchId, Long fileId) {
-        Path filePath = Paths.get(ROOT_DIR, projectId.toString(), branchId.toString(), fileId + ".txt");
+    public void deleteFile(Long projectId, Long branchId, Long commitId, Long fileId, String extension) {
+        Path filePath = buildFilePath(projectId, branchId, commitId, fileId, extension);
         try {
             Files.deleteIfExists(filePath);
         } catch (IOException e) {
@@ -53,12 +53,13 @@ public class FileStorageService implements FileStorageServiceInterface {
         }
     }
 
-    private Path buildFilePath(Long projectId, Long branchId, Long fileId, Long versionNumber, String extension) {
+    private Path buildFilePath(Long projectId, Long branchId, Long commitId, Long fileId, String extension) {
+        // projectId/branchId/commitId/fileId.extension
         return Paths.get(ROOT_DIR,
                 projectId.toString(),
                 branchId.toString(),
-                fileId.toString(),
-                versionNumber + extension);
+                commitId.toString(),
+                fileId.toString() + extension);
     }
 
     private String normalizePath(String filePath) {

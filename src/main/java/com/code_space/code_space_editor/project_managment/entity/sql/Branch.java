@@ -1,7 +1,7 @@
 package com.code_space.code_space_editor.project_managment.entity.sql;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -16,7 +16,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Data
@@ -29,22 +32,22 @@ public class Branch {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "project_id", nullable = false)
-    @JsonBackReference
-    private Project project; // This references the Project entity
-
     private String name;
 
-    private String createdByUsername;
-    private Long createdById;
+    private String authorUsername;
+    private Long authorId;
 
     private Long baseBranchId; // Nullable for original branches // For forking/merging
 
     private Instant createdAt;
     private Instant updatedAt;
 
-    @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id", nullable = false)
+    @JsonBackReference
+    private Project project; // This references the Project entity
+
+    @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonManagedReference
-    private List<File> files;
+    private Set<Commit> commits;
 }

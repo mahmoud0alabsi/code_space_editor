@@ -18,52 +18,42 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
-import com.code_space.code_space_editor.auth.utility.AuthUtils;
+import com.code_space.code_space_editor.project_managment.dto.branch.BranchDTO;
 import com.code_space.code_space_editor.project_managment.dto.branch.CreateBranchDTO;
 import com.code_space.code_space_editor.project_managment.dto.branch.ForkBranchDTO;
 import com.code_space.code_space_editor.project_managment.entity.sql.Branch;
+import com.code_space.code_space_editor.project_managment.mapper.BranchMapper;
+import com.code_space.code_space_editor.project_managment.service.ForkBranchService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
-@SecurityRequirement(name = "bearerAuth")
 @RestController
-@RequestMapping("/api/v1/projects/{projectId}/branches")
 @RequiredArgsConstructor
+@RequestMapping("/api/v1/branches")
+@SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Branch Management", description = "Branch management operations")
 public class BranchController {
 
     private final BranchService branchService;
-    private final AuthUtils authUtils;
+    private final ForkBranchService forkBranchService;
+    private final BranchMapper branchMapper;
 
-    // Get all branches for a specific project
-    @GetMapping
-    @PreAuthorize("@permissionService.hasProjectPermission(#projectId, 'VIEWER')")
-    public List<Branch> getBranchesByProject(@PathVariable Long projectId) {
-        return branchService.getAllByProjectId(projectId);
-    }
-
-    // Get a single branch by ID
-    @GetMapping("/{branchId}")
-    @PreAuthorize("@permissionService.hasBranchPermission(#projectId, #branchId, 'VIEWER')")
-    public Branch getBranchById(
-            @PathVariable Long projectId,
-            @PathVariable Long branchId) {
-        return branchService.getBranchById(branchId, projectId); // Service method to fetch a branch by ID
-    }
-
-    // Create a new branch in a project
-    @PostMapping
+    @PostMapping("/p/{projectId}")
     @PreAuthorize("@permissionService.hasProjectPermission(#projectId, 'COLLABORATOR')")
+    @Operation(summary = "Create a new branch")
     public Branch createBranch(
             @PathVariable Long projectId,
             @Valid @RequestBody CreateBranchDTO branchDTO) {
         return branchService.create(
-                authUtils.getCurrentUser(),
-                branchDTO, projectId);
+                projectId,
+                branchDTO);
     }
 
-    // Delete a branch by ID
-    @DeleteMapping("/{branchId}")
+    @DeleteMapping("/p/{projectId}/b/{branchId}")
     @PreAuthorize("@permissionService.hasBranchPermission(#projectId, #branchId, 'COLLABORATOR')")
+    @Operation(summary = "Delete a branch")
     public ResponseEntity<String> deleteBranch(
             @PathVariable Long projectId,
             @PathVariable Long branchId) {
@@ -71,15 +61,33 @@ public class BranchController {
         return ResponseEntity.ok("Branch deleted successfully");
     }
 
-    // Fork a branch
-    @PostMapping("/{branchId}/fork")
+    @PostMapping("/p/{projectId}/b/{branchId}/fork")
     @PreAuthorize("@permissionService.hasBranchPermission(#projectId, #branchId, 'COLLABORATOR')")
+    @Operation(summary = "Fork a branch")
     public Branch forkBranch(
             @PathVariable Long projectId,
             @PathVariable Long branchId,
             @Valid @RequestBody ForkBranchDTO branch) {
-        return branchService.forkBranch(
-                authUtils.getCurrentUser(),
-                branchId, projectId, branch);
+        return forkBranchService.forkBranch(
+                projectId, branchId, branch.getName());
+    }
+
+    @GetMapping("/p/{projectId}")
+    @PreAuthorize("@permissionService.hasProjectPermission(#projectId, 'VIEWER')")
+    @Operation(summary = "Get all branches by project ID")
+    public List<BranchDTO> getBranchesByProjectId(@PathVariable Long projectId) {
+        return branchService.getAllByProjectId(projectId)
+                .stream()
+                .map(branchMapper::toDTO)
+                .toList(); // Convert to DTOs if needed
+    }
+
+    @GetMapping("/p/{projectId}/b/{branchId}")
+    @PreAuthorize("@permissionService.hasBranchPermission(#projectId, #branchId, 'VIEWER')")
+    @Operation(summary = "Get a branch by ID")
+    public BranchDTO getBranchById(
+            @PathVariable Long projectId,
+            @PathVariable Long branchId) {
+        return branchMapper.toDTO(branchService.getBranchById(branchId, projectId));
     }
 }

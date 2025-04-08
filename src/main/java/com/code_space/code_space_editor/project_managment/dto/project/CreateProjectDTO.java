@@ -1,10 +1,4 @@
-package com.code_space.code_space_editor.project_managment.dto;
-
-import java.time.Instant;
-import java.util.List;
-
-import com.code_space.code_space_editor.project_managment.entity.sql.Branch;
-import com.code_space.code_space_editor.project_managment.entity.sql.ProjectMember;
+package com.code_space.code_space_editor.project_managment.dto.project;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -16,21 +10,12 @@ import lombok.AllArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProjectDTO {
-    private Long id;
-
-    private Long ownerId;
-
+public class CreateProjectDTO {
     @NotNull(message = "Project name must not be null")
     @Size(min = 3, max = 100, message = "Project name must be between 3 and 100 characters")
     private String name;
 
+    @NotNull(message = "Project description must not be null")
     @Size(max = 500, message = "Description cannot exceed 500 characters")
     private String description;
-
-    private Instant createdAt;
-    private Instant updatedAt;
-
-    private List<Branch> branches;
-    private List<ProjectMember> members;
 }

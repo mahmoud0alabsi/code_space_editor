@@ -1,4 +1,4 @@
-package com.code_space.code_space_editor.project_managment.dto;
+package com.code_space.code_space_editor.project_managment.dto.branch;
 
 import java.time.Instant;
 import java.util.List;
@@ -15,8 +15,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class BranchDTO {
     private Long id;
-    private Project project;
-    private Long createdBy;
+    private String authorUsername;
+    private Long authorId;
 
     private String name;
     private Long baseBranchId;
@@ -24,5 +24,6 @@ public class BranchDTO {
     private Instant createdAt;
     private Instant updatedAt;
 
+    private Project project;
     private List<File> files;
 }
