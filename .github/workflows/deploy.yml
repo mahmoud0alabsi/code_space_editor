@@ -42,32 +42,33 @@ jobs:
       
     - name: Deploy to backend via Bastion
       run: |
-          ssh -o StrictHostKeyChecking=no \
+        ssh -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
             -i ~/.ssh/bastion.pem \
             -o ProxyCommand="ssh -i ~/.ssh/bastion.pem -o StrictHostKeyChecking=no -W %h:%p ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}" \
             ${{ secrets.BACKEND_USER }}@${{ secrets.BACKEND_PRIVATE_IP }} -T << 'EOSSH'
-
+    
           set -e
-
+    
           cd ~
-
+    
           # Clone or update repo
           if [ ! -d "backend" ]; then
-            git clone https://github.com/mahmoud0alabsi/code_space_editor.git backend
+            git clone git@github.com:mahmoud0alabsi/code_space_editor.git backend
           else
             cd backend
             git pull origin main
             cd ..
           fi
-
+    
           cd backend
-
+    
           # Write .env from secret
           echo "${{ secrets.ENV_FILE }}" > .env
-
+    
           # Run Docker Compose (MySQL + Backend)
           docker compose down || true
           docker compose pull || true
           docker compose up -d
+    
         EOSSH
