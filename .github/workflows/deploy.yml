@@ -52,14 +52,25 @@ jobs:
       run: |
         ssh backend <<'EOSSH'
           set -e
-          cd /home/ubuntu/backend
 
-          # Create .env file from secret
+          cd ~
+
+          # Clone or update repo
+          if [ ! -d "backend" ]; then
+            git clone https://github.com/mahmoud0alabsi/code_space_editor.git backend
+          else
+            cd backend
+            git pull origin main
+            cd ..
+          fi
+
+          cd backend
+
+          # Write .env from secret
           echo "${{ secrets.ENV_FILE }}" > .env
-    
-          # Pull latest code/images if needed
+
+          # Run Docker Compose (MySQL + Backend)
           docker compose down || true
           docker compose pull || true
-          docker compose build
           docker compose up -d
         EOSSH
