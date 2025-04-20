@@ -42,7 +42,12 @@ jobs:
       
     - name: Deploy to backend via Bastion
       run: |
-        ssh backend <<'EOSSH'
+          ssh -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -i ~/.ssh/bastion.pem \
+            -o ProxyCommand="ssh -i ~/.ssh/bastion.pem -o StrictHostKeyChecking=no -W %h:%p ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}" \
+            ${{ secrets.BACKEND_USER }}@${{ secrets.BACKEND_PRIVATE_IP }} -T << 'EOSSH'
+
           set -e
 
           cd ~
