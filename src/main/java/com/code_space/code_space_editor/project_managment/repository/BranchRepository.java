@@ -13,6 +13,4 @@ public interface BranchRepository extends JpaRepository<Branch, Long> {
     List<Branch> findByProjectId(Long projectId);
 
     boolean existsByNameAndProjectId(String name, Long projectId);
-
-    void deleteById(Long branchId);
 }

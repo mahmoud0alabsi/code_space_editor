@@ -93,7 +93,7 @@ public class CommitController {
 
         List<FileDTO> fileDTOs = commitService.getLatestCommitFiles(branchId, includeContent);
         if (fileDTOs.isEmpty()) {
-            return ResponseEntity.noContent().build(); // 204 No Content
+            return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(fileDTOs);
     }
@@ -108,7 +108,7 @@ public class CommitController {
             @PathVariable Long fileId) {
         String fileContent = commitService.getFileContentById(fileId);
         if (fileContent.isEmpty()) {
-            return ResponseEntity.noContent().build(); // 204 No Content
+            return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(fileContent);
     }
@@ -124,7 +124,7 @@ public class CommitController {
 
         List<FileDTO> fileDTOs = commitService.getFilesByCommitId(commitId, includeContent);
         if (fileDTOs.isEmpty()) {
-            return ResponseEntity.noContent().build(); // 204 No Content
+            return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(fileDTOs);
     }

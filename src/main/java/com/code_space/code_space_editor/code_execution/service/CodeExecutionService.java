@@ -46,43 +46,6 @@ public class CodeExecutionService {
         return executeInDocker(code, language, args, timeout);
     }
 
-    private String getMainFileName(String language) {
-        return switch (language) {
-            case "java" -> "Main.java";
-            case "javascript" -> "main.js";
-            case "python" -> "main.py";
-            case "cpp" -> "main.cpp";
-            case "c" -> "main.c";
-            case "csharp" -> "Program.cs";
-            case "go" -> "main.go";
-            case "ruby" -> "main.rb";
-            case "php" -> "index.php";
-            case "rust" -> "main.rs";
-            default -> "main";
-        };
-    }
-
-    private void deleteDirectory(Path dir) {
-        if (dir == null || !Files.exists(dir))
-            return;
-
-        try {
-            Files.walk(dir)
-                    .sorted(Comparator.reverseOrder())
-                    .forEach(path -> {
-                        try {
-                            Files.delete(path);
-                        } catch (IOException e) {
-                            // Log and ignore
-                            System.err.println("Failed to delete: " + path);
-                        }
-                    });
-        } catch (IOException e) {
-            System.err.println("Failed to clean up directory: " + dir);
-        }
-    }
-
-    // Docker-based execution
     public CodeExecutionResult executeInDocker(String code, String language, List<String> args, int timeoutSeconds) {
         CodeExecutionResult result = new CodeExecutionResult();
         result.setSuccess(false);
@@ -167,6 +130,42 @@ public class CodeExecutionService {
         return result;
     }
 
+    private String getMainFileName(String language) {
+        return switch (language) {
+            case "java" -> "Main.java";
+            case "javascript" -> "main.js";
+            case "python" -> "main.py";
+            case "cpp" -> "main.cpp";
+            case "c" -> "main.c";
+            case "csharp" -> "Program.cs";
+            case "go" -> "main.go";
+            case "ruby" -> "main.rb";
+            case "php" -> "index.php";
+            case "rust" -> "main.rs";
+            default -> "main";
+        };
+    }
+
+    private void deleteDirectory(Path dir) {
+        if (dir == null || !Files.exists(dir))
+            return;
+
+        try {
+            Files.walk(dir)
+                    .sorted(Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException e) {
+                            // Log and ignore
+                            System.err.println("Failed to delete: " + path);
+                        }
+                    });
+        } catch (IOException e) {
+            System.err.println("Failed to clean up directory: " + dir);
+        }
+    }
+
     private String getDockerImage(String language) {
         return switch (language) {
             case "java" -> "openjdk:17";
@@ -209,7 +208,6 @@ public class CodeExecutionService {
                 while ((line = reader.readLine()) != null) {
                     output.append(line).append("\n");
 
-                    // Check if output is too large (prevent DOS)
                     if (output.length() > execProps.getMaxOutputSize()) {
                         output.append("\n... Output truncated (exceeded maximum size) ...");
                         break;

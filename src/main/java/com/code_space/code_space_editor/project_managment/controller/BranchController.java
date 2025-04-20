@@ -94,7 +94,7 @@ public class BranchController {
         return branchService.getAllByProjectId(projectId)
                 .stream()
                 .map(branchMapper::toDTO)
-                .toList(); // Convert to DTOs if needed
+                .toList();
     }
 
     @GetMapping("/p/{projectId}/b/{branchId}")

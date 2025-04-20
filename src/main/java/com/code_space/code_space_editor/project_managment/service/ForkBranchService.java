@@ -49,7 +49,6 @@ public class ForkBranchService {
                 .build();
         newBranch = branchRepository.save(newBranch);
 
-        // Get the latest commit from the base branch
         Commit baseCommit = commitServiceUtils.getLatestCommit(baseBranchId);
         if (baseCommit != null) {
             // Create a new commit for the forked branch

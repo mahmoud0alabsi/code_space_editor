@@ -8,10 +8,6 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "code.execution")
 public class ExecutionProperties {
-
-    // Docker vs direct process execution
-    private boolean useDocker = true;
-
     // Execution limits
     private int defaultTimeoutSeconds = 10;
     private int maxTimeoutSeconds = 30;

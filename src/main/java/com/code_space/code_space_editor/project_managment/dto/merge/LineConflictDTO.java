@@ -9,7 +9,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class LineConflictDTO {
     private int lineNumber;
-    private String baseContent; // Content from the base version
-    private String sourceContent; // Content from the source branch
-    private String targetContent; // Content from the target branch
+    private String baseContent;
+    private String sourceContent;
+    private String targetContent;
 }

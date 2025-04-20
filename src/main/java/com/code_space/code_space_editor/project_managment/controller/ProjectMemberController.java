@@ -73,8 +73,6 @@ public class ProjectMemberController {
                                 projectId,
                                 dto.getUserId(),
                                 dto.getRole());
-
-                // Convert to DTO and return
                 return ResponseEntity.ok("Member role updated successfully");
         }
 

@@ -2,8 +2,6 @@ package com.code_space.code_space_editor.auth.config;
 
 import java.util.List;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -11,20 +9,20 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.code_space.code_space_editor.auth.handler.CustomLogoutSuccessHandler;
 import com.code_space.code_space_editor.auth.handler.OAuth2AuthenticationSuccessHandler;
 
 import jakarta.servlet.http.HttpServletResponse;
-
-import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 @EnableWebSecurity
@@ -32,21 +30,23 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-        private static final String[] WHITE_LIST_URLS = {
-                        "/api/v1/auth/**",
-                        "/swagger-ui/**",
-                        "/v3/api-docs/**",
-                        "/hello/**",
-                        "/ws/**", "/index.html", "/static/**",
-                        "/topic/**", "/app/**",
-                        "/favicon.ico",
-        };
-
         private final JwtAuthenticationFilter jwtAuthFilter;
         private final AuthenticationProvider authenticationProvider;
         private final LogoutHandler logoutHandler;
         private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
         private final CustomLogoutSuccessHandler logoutSuccessHandler;
+
+        private static final String[] WHITE_LIST_URLS = {
+                        "/api/v1/auth/**",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/ws/**", "/index.html", "/static/**",
+                        "/topic/**", "/app/**",
+                        "/favicon.ico",
+        };
+
+        @Value("${FRONT_END_URL}")
+        private String frontEndHost;
 
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -54,13 +54,6 @@ public class SecurityConfig {
                                 .csrf(csrf -> csrf.disable())
                                 .cors(httpSecurityCorsConfigurer -> httpSecurityCorsConfigurer
                                                 .configurationSource(corsConfigurationSource()))
-                                // .csrf(csrf -> csrf
-                                // .ignoringRequestMatchers(
-                                // new AntPathRequestMatcher("/ws/**"), // Skip CSRF for
-                                // // WebSocket
-                                // new AntPathRequestMatcher("/app/**") // Skip CSRF for
-                                // // STOMP messaging
-                                // ))
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(WHITE_LIST_URLS).permitAll()
                                                 .anyRequest().authenticated())
@@ -88,8 +81,7 @@ public class SecurityConfig {
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration corsConfiguration = new CorsConfiguration();
-                // Make the below setting as * to allow connection from any hos
-                corsConfiguration.setAllowedOrigins(List.of("http://localhost:3000"));
+                corsConfiguration.setAllowedOrigins(List.of(frontEndHost));
                 corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                 corsConfiguration.setAllowCredentials(true);
                 corsConfiguration.setAllowedHeaders(List.of("*"));

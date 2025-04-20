@@ -2,6 +2,7 @@ package com.code_space.code_space_editor.auth.service;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -59,7 +60,7 @@ public class AuthService {
                         return new AuthResponse(accessToken, refreshToken);
                 } catch (JwtException e) {
                         throw new InvalidRefreshTokenException("Invalid or expired refresh token", e);
-                } catch (Exception e) {
+                } catch (AuthenticationException e) {
                         throw new UsernameNotFoundException("Invalid username or password", e);
                 }
         }

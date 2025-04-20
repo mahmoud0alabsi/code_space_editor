@@ -9,7 +9,6 @@ import com.code_space.code_space_editor.auth.entity.User;
 import com.code_space.code_space_editor.auth.utility.AuthUtils;
 import com.code_space.code_space_editor.exceptions.ResourceNotFoundException;
 import com.code_space.code_space_editor.project_managment.dto.branch.CreateBranchDTO;
-import com.code_space.code_space_editor.project_managment.dto.branch.ForkBranchDTO;
 import com.code_space.code_space_editor.project_managment.entity.sql.Branch;
 import com.code_space.code_space_editor.project_managment.entity.sql.Project;
 import com.code_space.code_space_editor.project_managment.repository.BranchRepository;
@@ -54,9 +53,6 @@ public class BranchService {
             throw new ResourceNotFoundException(
                     "Branch not found with ID: " + branchId + " in project ID: " + projectId);
         }
-
-        // TODO: Ensure this also delete all commits and files associated with this
-        // branch
 
         branchRepository.deleteById(branchId);
     }

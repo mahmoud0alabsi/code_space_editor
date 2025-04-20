@@ -35,7 +35,7 @@ public class User implements UserDetails {
     private String username;
 
     private String password;
-    private String provider; // e.g. local, google, github
+    private String provider; // local, google, github
 
     @Enumerated(EnumType.STRING)
     private Role role;

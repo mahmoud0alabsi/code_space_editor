@@ -31,11 +31,6 @@ public class FileService implements FileServiceInterface {
     private final AuthUtils authUtils;
 
     @Override
-    public List<File> getByCommit(Long commitId) {
-        return fileRepository.findByCommitId(commitId);
-    }
-
-    @Override
     @Transactional
     public File createFile(Long projectId, Branch branch, Commit commit, CreateFileDTO fileDTO) {
         File file = buildNewFile(branch, commit, fileDTO);
@@ -60,19 +55,38 @@ public class FileService implements FileServiceInterface {
     }
 
     @Override
-    public List<File> getAllByCommitId(Long commitId) {
-        return fileRepository.findByCommitId(commitId);
+    @Transactional
+    public void forkFiles(Long projectId, Long branhcId, Commit baseCommit, Commit newCommit) {
+        List<File> originalFiles = fileRepository.findByCommitId(baseCommit.getId());
+        originalFiles.forEach(file -> forkSingleFile(projectId, branhcId, file, newCommit));
     }
 
     @Override
     @Transactional
-    public void forkFiles(Long projectId, Long branhcId, Commit baseCommit, Commit newCommit) {
-        List<File> originalFiles = fileRepository.findByCommitId(baseCommit.getId());
+    public void deleteFilesByBranch(Branch branch) {
+        List<File> files = fileRepository.findByBranchId(branch.getId());
+        if (files.isEmpty()) {
+            return;
+        }
 
-        System.out.println("Forking files from commit: " + baseCommit.getId() + " to commit: " + newCommit.getId());
-        System.out.println("Original files: " + originalFiles.size());
+        for (File file : files) {
+            try {
+                fileStorageService.deleteFileByPath(file.getPath());
+                fileRepository.delete(file);
+            } catch (Exception e) {
+                throw new FileStorageException("Error deleting file: " + e.getMessage(), e);
+            }
+        }
+    }
 
-        originalFiles.forEach(file -> forkSingleFile(projectId, branhcId, file, newCommit));
+    @Override
+    public List<File> getByCommit(Long commitId) {
+        return fileRepository.findByCommitId(commitId);
+    }
+
+    @Override
+    public List<File> getAllByCommitId(Long commitId) {
+        return fileRepository.findByCommitId(commitId);
     }
 
     @Transactional
@@ -106,7 +120,6 @@ public class FileService implements FileServiceInterface {
 
     private File buildNewFile(Branch branch, Commit commit, CreateFileDTO fileDTO) {
         validateFileUniqueness(commit.getId(), fileDTO.getName());
-        System.out.println("Creating new file: " + fileDTO.getName() + " in commit: " + commit.getId());
         File file = new File();
         file.setBranch(branch);
         file.setCommit(commit);
@@ -123,7 +136,6 @@ public class FileService implements FileServiceInterface {
     private void forkSingleFile(Long projectId, Long branchId, File baseFile, Commit newCommit) {
         try {
             String content = fileStorageService.readFile(baseFile.getPath());
-            System.out.println("Forking file: " + baseFile.getName() + " with content: " + content);
             CreateFileDTO fileDTO = CreateFileDTO.builder()
                     .name(baseFile.getName())
                     .extension(baseFile.getExtension())
@@ -146,24 +158,6 @@ public class FileService implements FileServiceInterface {
             fileRepository.save(savedFile);
         } catch (Exception e) {
             throw new FileStorageException("Error forking file: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
-    @Transactional
-    public void deleteFilesByBranch(Branch branch) {
-        List<File> files = fileRepository.findByBranchId(branch.getId());
-        if (files.isEmpty()) {
-            return;
-        }
-
-        for (File file : files) {
-            try {
-                fileStorageService.deleteFileByPath(file.getPath());
-                fileRepository.delete(file);
-            } catch (Exception e) {
-                throw new FileStorageException("Error deleting file: " + e.getMessage(), e);
-            }
         }
     }
 

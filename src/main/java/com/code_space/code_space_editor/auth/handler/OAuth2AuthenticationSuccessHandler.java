@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.util.Map;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,7 +21,6 @@ import com.code_space.code_space_editor.auth.entity.User;
 import com.code_space.code_space_editor.auth.repository.UserRepository;
 import com.code_space.code_space_editor.auth.service.JwtService;
 import com.code_space.code_space_editor.auth.service.RefreshTokenService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Component
 @RequiredArgsConstructor

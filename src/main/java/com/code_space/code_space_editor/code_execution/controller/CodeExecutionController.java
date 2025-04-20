@@ -17,33 +17,21 @@ import lombok.RequiredArgsConstructor;
 public class CodeExecutionController {
 
     private final CodeExecutionService codeExecutionService;
-    // private SimpMessagingTemplate messagingTemplate;
     private final AuthUtils authUtils;
 
     @PostMapping
     public ResponseEntity<CodeExecutionResult> executeCode(
             @RequestBody CodeExecutionRequest request) {
 
-        // Get current user
         Long userId = authUtils.getCurrentUserId();
 
-        // Execute code
         CodeExecutionResult result = codeExecutionService.executeCode(
                 request.getCode(),
                 request.getLanguage(),
                 request.getArgs(),
                 request.getTimeoutSeconds());
 
-        // Set user who executed the code
         result.setExecutedBy(userId);
-
-        // Broadcast results to others in session
-        // if (request.getSessionId() != null) {
-        // messagingTemplate.convertAndSend(
-        // "/topic/execution/" + request.getSessionId(),
-        // result);
-        // }
-
         return ResponseEntity.ok(result);
     }
 

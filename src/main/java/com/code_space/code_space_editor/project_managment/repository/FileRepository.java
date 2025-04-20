@@ -23,7 +23,6 @@ public interface FileRepository extends JpaRepository<File, Long> {
          * specific role. This is useful for authorization checks to ensure that the
          * user has the right permissions to access or modify the file.
          */
-        // TODO: Nees update
         @Query("SELECT COUNT(f) > 0 FROM File f " +
                         "JOIN f.branch b " +
                         "JOIN b.project p " +

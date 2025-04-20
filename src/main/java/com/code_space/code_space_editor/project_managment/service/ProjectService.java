@@ -42,7 +42,6 @@ public class ProjectService {
 
         Project newProject = projectRepository.save(project);
 
-        // Add the owner as a member of the project with the role "OWNER"
         ProjectMember ownerMember = ProjectMember.builder()
                 .project(newProject)
                 .userId(newProject.getOwnerId())
@@ -77,7 +76,7 @@ public class ProjectService {
         // get the projects where the user is a member
         List<ProjectMember> projectMembers = projectMemberRepository.findByUserId(userId);
         if (projectMembers.isEmpty()) {
-            return List.of(); // Return an empty list if the user is not a member of any project
+            return List.of();
         }
 
         List<ProjectMembershipDTO> projects = projectMembers.stream()

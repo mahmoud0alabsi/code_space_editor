@@ -17,8 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.code_space.code_space_editor.exceptions.ResourceNotFoundException;
-import com.code_space.code_space_editor.project_managment.dto.ProjectDTO;
 import com.code_space.code_space_editor.project_managment.dto.project.CreateProjectDTO;
+import com.code_space.code_space_editor.project_managment.dto.project.ProjectDTO;
 import com.code_space.code_space_editor.project_managment.dto.project.ProjectMembershipDTO;
 import com.code_space.code_space_editor.project_managment.entity.sql.Project;
 import com.code_space.code_space_editor.project_managment.mapper.ProjectMapper;

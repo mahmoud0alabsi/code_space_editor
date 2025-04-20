@@ -1,6 +1,5 @@
 package com.code_space.code_space_editor.collaborative_coding.controller;
 
-import java.security.Principal;
 import java.util.List;
 
 import org.springframework.messaging.handler.annotation.DestinationVariable;
@@ -14,7 +13,6 @@ import com.code_space.code_space_editor.collaborative_coding.dto.BranchSyncDTO;
 import com.code_space.code_space_editor.collaborative_coding.dto.FileSyncDTO;
 import com.code_space.code_space_editor.collaborative_coding.service.SessionStateService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -26,7 +24,6 @@ public class SessionSyncController {
     @MessageMapping("/sync/project/{projectId}/branch")
     @SendTo("/topic/sync/project/{projectId}/branch")
     public BranchSyncDTO createBranch(@DestinationVariable String projectId, BranchSyncDTO branch) {
-        sessionStateService.addBranch(projectId, branch);
         return branch;
     }
 
@@ -40,12 +37,6 @@ public class SessionSyncController {
     @MessageMapping("/sync/project/{projectId}/init")
     public void initSync(@DestinationVariable String projectId, @Payload String username) {
         List<FileSyncDTO> files = sessionStateService.getFiles(projectId);
-        System.out.println("======================================================================");
-        System.out.println("Syncing files for project: " + projectId);
-        System.out.println("Files: " + files);
-        System.out.println("Username: " + username);
-        System.out.println("======================================================================");
-
         messagingTemplate.convertAndSendToUser(username, "/queue/sync/file", files);
     }
 }

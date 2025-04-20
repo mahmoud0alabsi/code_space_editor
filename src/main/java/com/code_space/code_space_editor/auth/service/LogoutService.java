@@ -42,7 +42,6 @@ public class LogoutService implements LogoutHandler {
 
         tokenService.revokeAllRefreshTokens(user);
 
-        // Optional: clear security context (already done in success handler too)
         SecurityContextHolder.clearContext();
     }
 }

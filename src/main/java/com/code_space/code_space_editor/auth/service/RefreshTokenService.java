@@ -17,9 +17,7 @@ public class RefreshTokenService {
 
     private final RefreshTokenRepository tokenRepository;
 
-    /**
-     * Revoke all valid tokens for a user (logout or login rotation)
-     */
+    // Tokens rotation
     public void revokeAllRefreshTokens(User user) {
         List<RefreshToken> validTokens = tokenRepository.findAllValidTokenByUser(user.getId().intValue());
         if (!validTokens.isEmpty()) {
@@ -31,9 +29,6 @@ public class RefreshTokenService {
         }
     }
 
-    /**
-     * Save access or refresh token to DB
-     */
     public void saveRefreshToken(User user, String token) {
         RefreshToken refToken = RefreshToken.builder()
                 .user(user)

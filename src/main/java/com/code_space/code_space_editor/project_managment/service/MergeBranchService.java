@@ -35,9 +35,7 @@ public class MergeBranchService {
     private final FileService fileService;
     private final AuthUtils authUtils;
 
-    /**
-     * Perform a three-way merge from source branch into target branch.
-     */
+    // Perform a three-way merge from source branch into target branch.
     @Transactional
     public MergeResultDTO mergeBranch(Long targetBranchId, Long sourceBranchId) {
         Long authorId = authUtils.getCurrentUserId();
@@ -48,30 +46,22 @@ public class MergeBranchService {
         Branch sourceBranch = branchRepository.findById(sourceBranchId)
                 .orElseThrow(() -> new ResourceNotFoundException("Source branch not found with ID: " + sourceBranchId));
 
-        System.out.println("Merging branches: " + targetBranch.getName() + " into " + sourceBranch.getName());
-
         // Ensure branches belong to the same project
         if (!targetBranch.getProject().getId().equals(sourceBranch.getProject().getId())) {
             throw new IllegalArgumentException("Cannot merge branches from different projects");
         }
 
-        // Get latest commits
         Commit targetLatestCommit = getLatestCommit(targetBranchId);
         Commit sourceLatestCommit = getLatestCommit(sourceBranchId);
         if (sourceLatestCommit == null) {
             throw new IllegalStateException("Source branch has no commits to merge");
         }
 
-        System.out.println(
-                "Fetch latest commits for branches: " + targetBranch.getName() + " and " + sourceBranch.getName());
-
-        // Find the common ancestor (base commit)
+        // Find base commit
         Commit baseCommit = findCommonAncestor(targetBranch, sourceBranch);
         if (baseCommit == null) {
             throw new IllegalStateException("No common ancestor found between branches");
         }
-
-        System.out.println("Found common ancestor: " + baseCommit.getId());
 
         // Get files for all three commits
         List<File> baseFiles = baseCommit != null ? fileService.getByCommit(baseCommit.getId())
@@ -80,15 +70,10 @@ public class MergeBranchService {
         List<File> targetFiles = targetLatestCommit != null ? fileService.getByCommit(targetLatestCommit.getId())
                 : Collections.emptyList();
 
-        System.out.println("Fetched files for base, source, and target commits");
-
-        // Detect conflicts
         List<ConflictDTO> conflicts = detectConflicts(baseFiles, sourceFiles, targetFiles);
         if (!conflicts.isEmpty()) {
             return new MergeResultDTO(false, null, conflicts); // Return conflicts if any
         }
-
-        System.out.println("No conflicts detected, proceeding with merge");
 
         // No conflicts: proceed with merge
         Commit mergeCommit = Commit.builder()
@@ -101,9 +86,7 @@ public class MergeBranchService {
                 .build();
         mergeCommit = commitRepository.save(mergeCommit);
 
-        System.out.println("Created merge commit: " + mergeCommit.getId());
-
-        // Apply changes: Fork files from source commit to merge commit
+        // Fork files from source commit to merge commit
         fileService.forkFiles(targetBranch.getProject().getId(), targetBranch.getId(), sourceLatestCommit, mergeCommit);
 
         System.out.println("Forked files from source commit to merge commit");
@@ -116,38 +99,25 @@ public class MergeBranchService {
         return new MergeResultDTO(true, mergeCommit, Collections.emptyList());
     }
 
-    /**
-     * Find the latest commit for a branch.
-     */
     private Commit getLatestCommit(Long branchId) {
         return commitServiceUtils.getLatestCommit(branchId);
     }
 
-    /**
-     * Find the common ancestor between two branches.
-     */
     private Commit findCommonAncestor(Branch targetBranch, Branch sourceBranch) {
-        System.out.println("Finding common ancestor between branches: " + targetBranch.getName() + " and "
-                + sourceBranch.getName());
-
         List<Commit> targetCommits = getAllCommits(targetBranch.getId());
         List<Commit> sourceCommits = getAllCommits(sourceBranch.getId());
 
         // If sourceBranch was forked from targetBranch
         if (sourceBranch.getBaseBranchId() != null && sourceBranch.getBaseBranchId().equals(targetBranch.getId())) {
-            System.out.println("Source branch is a fork of target branch, using its base commit as common ancestor");
             Long sourceFirstCommitId = sourceCommits.get(0).getId();
             Commit sourceFirstCommit = commitRepository.findById(sourceFirstCommitId)
                     .orElseThrow(() -> new ResourceNotFoundException(
                             "Source branch first commit not found: " + sourceFirstCommitId));
 
-            System.out.println("Base commit ID: " + sourceFirstCommit.getId());
-
             Long parentCommitId = sourceFirstCommit.getParentCommit();
             if (parentCommitId != null) {
                 Commit parentCommit = commitRepository.findById(parentCommitId).orElse(null);
                 if (parentCommit != null && targetCommits.stream().anyMatch(tc -> tc.getId().equals(parentCommitId))) {
-                    System.out.println("Found common ancestor (fork point): " + parentCommitId);
                     return parentCommit;
                 }
             }
@@ -162,16 +132,10 @@ public class MergeBranchService {
         return null; // No common ancestor found
     }
 
-    /**
-     * Get all commits for a branch, ordered by creation time descending.
-     */
     private List<Commit> getAllCommits(Long branchId) {
         return commitRepository.findByBranchId(branchId);
     }
 
-    /**
-     * Detect conflicts between base, source, and target files.
-     */
     private List<ConflictDTO> detectConflicts(List<File> baseFiles, List<File> sourceFiles, List<File> targetFiles) {
         List<ConflictDTO> conflicts = new ArrayList<>();
         Map<String, File> baseMap = baseFiles.stream().collect(Collectors.toMap(File::getName, f -> f));
@@ -198,18 +162,12 @@ public class MergeBranchService {
         return conflicts;
     }
 
-    /**
-     * Check if two files have the same content.
-     */
     private boolean isFileContentEqual(File file1, File file2) {
         String content1 = fileStorageService.readFile(file1.getPath());
         String content2 = fileStorageService.readFile(file2.getPath());
         return content1.equals(content2);
     }
 
-    /**
-     * Detect line-level conflicts for a single file.
-     */
     private ConflictDTO detectLineConflicts(File baseFile, File sourceFile, File targetFile) {
         String baseContent = fileStorageService.readFile(baseFile.getPath());
         String sourceContent = fileStorageService.readFile(sourceFile.getPath());
