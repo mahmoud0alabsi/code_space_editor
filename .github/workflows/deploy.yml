@@ -42,7 +42,11 @@ jobs:
     
     - name: Upload project files to EC2
       run: |
-        rsync -e "ssh -i ~/.ssh/bastion.pem -o StrictHostKeyChecking=no -J ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}" -avz ./ ${{ secrets.BACKEND_USER }}@${{ secrets.BACKEND_PRIVATE_IP }}:/home/ubuntu/backend
+        rsync -e "ssh -i ~/.ssh/bastion.pem \
+          -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null \
+          -J ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}" \
+          -avz ./ ${{ secrets.BACKEND_USER }}@${{ secrets.BACKEND_PRIVATE_IP }}:/home/ubuntu/backend
   
     - name: Deploy to backend via Bastion
       run: |
