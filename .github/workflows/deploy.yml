@@ -54,7 +54,7 @@ jobs:
     
           # Clone or update repo
           if [ ! -d "backend" ]; then
-            git clone git@github.com:mahmoud0alabsi/code_space_editor.git backend
+            git clone https://github.com/mahmoud0alabsi/code_space_editor.git backend
           else
             cd backend
             git pull origin main
