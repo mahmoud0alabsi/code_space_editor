@@ -18,18 +18,19 @@ services:
       - codespace-net
 
   backend:
-    image: codespace-editor-backend:latest
+    image: mahmoudalabsi/codespace-editor-backend:latest
     container_name: codespace-backend
     depends_on:
       - mysql
     env_file:
-      - .env.production
+      - .env
     ports:
       - "8080:8080"
     networks:
       - codespace-net
     volumes:
       - backend_uploads:/uploads
+    restart: always
 
 volumes:
   mysql_data_cse:
