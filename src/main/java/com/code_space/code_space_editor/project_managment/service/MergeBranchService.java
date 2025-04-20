@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import com.code_space.code_space_editor.exceptions.ResourceNotFoundException;
+import com.code_space.code_space_editor.project_managment.concurrency.ConcurrencyService;
 import com.code_space.code_space_editor.project_managment.dto.merge.ConflictDTO;
 import com.code_space.code_space_editor.project_managment.dto.merge.LineConflictDTO;
 import com.code_space.code_space_editor.project_managment.dto.merge.MergeResultDTO;
@@ -28,6 +29,7 @@ import com.code_space.code_space_editor.auth.utility.AuthUtils;
 @Service
 @RequiredArgsConstructor
 public class MergeBranchService {
+    private final ConcurrencyService concurrencyService;
     private final CommitRepository commitRepository;
     private final BranchRepository branchRepository;
     private final CommitServiceUtils commitServiceUtils;
@@ -38,65 +40,73 @@ public class MergeBranchService {
     // Perform a three-way merge from source branch into target branch.
     @Transactional
     public MergeResultDTO mergeBranch(Long targetBranchId, Long sourceBranchId) {
-        Long authorId = authUtils.getCurrentUserId();
+        concurrencyService.lockBranch(targetBranchId);
+        try {
+            Long authorId = authUtils.getCurrentUserId();
 
-        // Fetch branches
-        Branch targetBranch = branchRepository.findById(targetBranchId)
-                .orElseThrow(() -> new ResourceNotFoundException("Target branch not found with ID: " + targetBranchId));
-        Branch sourceBranch = branchRepository.findById(sourceBranchId)
-                .orElseThrow(() -> new ResourceNotFoundException("Source branch not found with ID: " + sourceBranchId));
+            // Fetch branches
+            Branch targetBranch = branchRepository.findById(targetBranchId)
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Target branch not found with ID: " + targetBranchId));
+            Branch sourceBranch = branchRepository.findById(sourceBranchId)
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Source branch not found with ID: " + sourceBranchId));
 
-        // Ensure branches belong to the same project
-        if (!targetBranch.getProject().getId().equals(sourceBranch.getProject().getId())) {
-            throw new IllegalArgumentException("Cannot merge branches from different projects");
+            // Ensure branches belong to the same project
+            if (!targetBranch.getProject().getId().equals(sourceBranch.getProject().getId())) {
+                throw new IllegalArgumentException("Cannot merge branches from different projects");
+            }
+
+            Commit targetLatestCommit = getLatestCommit(targetBranchId);
+            Commit sourceLatestCommit = getLatestCommit(sourceBranchId);
+            if (sourceLatestCommit == null) {
+                throw new IllegalStateException("Source branch has no commits to merge");
+            }
+
+            // Find base commit
+            Commit baseCommit = findCommonAncestor(targetBranch, sourceBranch);
+            if (baseCommit == null) {
+                throw new IllegalStateException("No common ancestor found between branches");
+            }
+
+            // Get files for all three commits
+            List<File> baseFiles = baseCommit != null ? fileService.getByCommit(baseCommit.getId())
+                    : Collections.emptyList();
+            List<File> sourceFiles = fileService.getByCommit(sourceLatestCommit.getId());
+            List<File> targetFiles = targetLatestCommit != null ? fileService.getByCommit(targetLatestCommit.getId())
+                    : Collections.emptyList();
+
+            List<ConflictDTO> conflicts = detectConflicts(baseFiles, sourceFiles, targetFiles);
+            if (!conflicts.isEmpty()) {
+                return new MergeResultDTO(false, null, conflicts); // Return conflicts if any
+            }
+
+            // No conflicts: proceed with merge
+            Commit mergeCommit = Commit.builder()
+                    .author(authorId)
+                    .authorName(sourceBranch.getAuthorUsername())
+                    .branch(targetBranch)
+                    .message("Merged branch " + sourceBranch.getName() + " into " + targetBranch.getName())
+                    .createdAt(Instant.now())
+                    .parentCommit(targetLatestCommit != null ? targetLatestCommit.getId() : null)
+                    .build();
+            mergeCommit = commitRepository.save(mergeCommit);
+
+            // Fork files from source commit to merge commit
+            fileService.forkFiles(targetBranch.getProject().getId(), targetBranch.getId(), sourceLatestCommit,
+                    mergeCommit);
+
+            System.out.println("Forked files from source commit to merge commit");
+
+            // Remove source branch, its files, and commits
+            // fileService.deleteFilesByBranch(sourceBranch);
+            // commitRepository.deleteByBranchId(sourceBranch.getId());
+            // branchRepository.deleteById(sourceBranch.getId());
+
+            return new MergeResultDTO(true, mergeCommit, Collections.emptyList());
+        } finally {
+            concurrencyService.unlockBranch(targetBranchId);
         }
-
-        Commit targetLatestCommit = getLatestCommit(targetBranchId);
-        Commit sourceLatestCommit = getLatestCommit(sourceBranchId);
-        if (sourceLatestCommit == null) {
-            throw new IllegalStateException("Source branch has no commits to merge");
-        }
-
-        // Find base commit
-        Commit baseCommit = findCommonAncestor(targetBranch, sourceBranch);
-        if (baseCommit == null) {
-            throw new IllegalStateException("No common ancestor found between branches");
-        }
-
-        // Get files for all three commits
-        List<File> baseFiles = baseCommit != null ? fileService.getByCommit(baseCommit.getId())
-                : Collections.emptyList();
-        List<File> sourceFiles = fileService.getByCommit(sourceLatestCommit.getId());
-        List<File> targetFiles = targetLatestCommit != null ? fileService.getByCommit(targetLatestCommit.getId())
-                : Collections.emptyList();
-
-        List<ConflictDTO> conflicts = detectConflicts(baseFiles, sourceFiles, targetFiles);
-        if (!conflicts.isEmpty()) {
-            return new MergeResultDTO(false, null, conflicts); // Return conflicts if any
-        }
-
-        // No conflicts: proceed with merge
-        Commit mergeCommit = Commit.builder()
-                .author(authorId)
-                .authorName(sourceBranch.getAuthorUsername())
-                .branch(targetBranch)
-                .message("Merged branch " + sourceBranch.getName() + " into " + targetBranch.getName())
-                .createdAt(Instant.now())
-                .parentCommit(targetLatestCommit != null ? targetLatestCommit.getId() : null)
-                .build();
-        mergeCommit = commitRepository.save(mergeCommit);
-
-        // Fork files from source commit to merge commit
-        fileService.forkFiles(targetBranch.getProject().getId(), targetBranch.getId(), sourceLatestCommit, mergeCommit);
-
-        System.out.println("Forked files from source commit to merge commit");
-
-        // Remove source branch, its files, and commits
-        // fileService.deleteFilesByBranch(sourceBranch);
-        // commitRepository.deleteByBranchId(sourceBranch.getId());
-        // branchRepository.deleteById(sourceBranch.getId());
-
-        return new MergeResultDTO(true, mergeCommit, Collections.emptyList());
     }
 
     private Commit getLatestCommit(Long branchId) {

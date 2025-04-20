@@ -59,7 +59,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 final String finalUsername = username;
 
                 // Find or create user
-                User user = userRepository.findByUsername(email).orElseGet(() -> {
+                User user = userRepository.findByUsername(finalUsername).orElseGet(() -> {
                         User newUser = User.builder()
                                         .email(finalEmail)
                                         .username(finalUsername)

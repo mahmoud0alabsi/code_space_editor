@@ -1,0 +1,49 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: codespace-editor-backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Log in to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build Docker image
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }} .
+
+    - name: Push Docker image
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+
+    - name: Prepare SSH Bastion tunnel to Backend
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.BASTION_PRIVATE_KEY }}" | base64 -d > ~/.ssh/bastion.pem
+        chmod 600 ~/.ssh/bastion.pem
+    
+        echo "Host backend" >> ~/.ssh/config
+        echo "  HostName ${{ secrets.BACKEND_PRIVATE_IP }}" >> ~/.ssh/config
+        echo "  User ${{ secrets.BACKEND_USER }}" >> ~/.ssh/config
+        echo "  IdentityFile ~/.ssh/bastion.pem" >> ~/.ssh/config
+        echo "  ProxyCommand ssh -i ~/.ssh/bastion.pem -o StrictHostKeyChecking=no -W %h:%p ${{ secrets.BASTION_USER }}@${{ secrets.BASTION_HOST }}" >> ~/.ssh/config
+    
+    - name: Deploy to Backend via Bastion
+      run: |
+        ssh -o StrictHostKeyChecking=no backend <<EOSSH
+          docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          docker stop backend || true && docker rm backend || true
+          docker run -d --name backend -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+        EOSSH

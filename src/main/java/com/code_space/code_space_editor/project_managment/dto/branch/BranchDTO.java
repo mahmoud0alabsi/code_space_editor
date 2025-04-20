@@ -3,6 +3,8 @@ package com.code_space.code_space_editor.project_managment.dto.branch;
 import java.time.Instant;
 import java.util.List;
 
+import com.code_space.code_space_editor.project_managment.dto.file.FileDTO;
+import com.code_space.code_space_editor.project_managment.dto.project.ProjectDTO;
 import com.code_space.code_space_editor.project_managment.entity.sql.Project;
 import com.code_space.code_space_editor.project_managment.entity.sql.File;
 
@@ -24,6 +26,6 @@ public class BranchDTO {
     private Instant createdAt;
     private Instant updatedAt;
 
-    private Project project;
-    private List<File> files;
+    private ProjectDTO project;
+    private List<FileDTO> files;
 }

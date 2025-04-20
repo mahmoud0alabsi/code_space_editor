@@ -12,6 +12,7 @@ import com.code_space.code_space_editor.project_managment.entity.sql.Branch;
 import com.code_space.code_space_editor.project_managment.entity.sql.File;
 import com.code_space.code_space_editor.project_managment.repository.FileRepository;
 import com.code_space.code_space_editor.exceptions.FileStorageException;
+import com.code_space.code_space_editor.project_managment.concurrency.ConcurrencyService;
 import com.code_space.code_space_editor.project_managment.dto.file.CreateFileDTO;
 import com.code_space.code_space_editor.project_managment.dto.file.FileDTO;
 import com.code_space.code_space_editor.project_managment.entity.sql.Commit;
@@ -25,8 +26,9 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class FileService implements FileServiceInterface {
-    private final FileRepository fileRepository;
     private final FileStorageServiceInterface fileStorageService;
+    private final ConcurrencyService concurrencyService;
+    private final FileRepository fileRepository;
     private final FileMapper fileMapper;
     private final AuthUtils authUtils;
 
@@ -36,22 +38,30 @@ public class FileService implements FileServiceInterface {
         File file = buildNewFile(branch, commit, fileDTO);
         File savedFile = fileRepository.save(file);
 
-        String filePath = fileStorageService.storeFile(projectId, branch.getId(), commit.getId(), file.getId(),
-                fileDTO.getContent(), fileDTO.getExtension());
+        concurrencyService.lockFileWrite(savedFile.getId());
+        try {
+            String filePath = fileStorageService.storeFile(projectId, branch.getId(), commit.getId(),
+                    savedFile.getId(), fileDTO.getContent(), fileDTO.getExtension());
 
-        savedFile.setPath(filePath);
-        savedFile = fileRepository.save(savedFile);
-
-        return savedFile;
+            savedFile.setPath(filePath);
+            return fileRepository.save(savedFile);
+        } finally {
+            concurrencyService.unlockFileWrite(savedFile.getId());
+        }
     }
 
     @Override
     @Transactional
     public File updateFileInfo(Long fileId, String name) {
         File file = getFileOrThrow(fileId);
-        file.setName(name);
-        file.setUpdatedAt(Instant.now());
-        return fileRepository.save(file);
+        concurrencyService.lockFileWrite(fileId);
+        try {
+            file.setName(name);
+            file.setUpdatedAt(Instant.now());
+            return fileRepository.save(file);
+        } finally {
+            concurrencyService.unlockFileWrite(fileId);
+        }
     }
 
     @Override
@@ -163,7 +173,12 @@ public class FileService implements FileServiceInterface {
 
     @Override
     public String getFileContent(File file) {
-        return fileStorageService.readFile(file.getPath());
+        concurrencyService.lockFileRead(file.getId());
+        try {
+            return fileStorageService.readFile(file.getPath());
+        } finally {
+            concurrencyService.unlockFileRead(file.getId());
+        }
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.code_space.code_space_editor.auth.entity.User;
 import com.code_space.code_space_editor.auth.utility.AuthUtils;
 import com.code_space.code_space_editor.exceptions.ResourceNotFoundException;
+import com.code_space.code_space_editor.project_managment.concurrency.ConcurrencyService;
 import com.code_space.code_space_editor.project_managment.dto.commit.CreateCommitDTO;
 import com.code_space.code_space_editor.project_managment.dto.file.CreateFileDTO;
 import com.code_space.code_space_editor.project_managment.dto.file.FileDTO;
@@ -24,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class CommitService {
+    private final ConcurrencyService concurrencyService;
     private final CommitRepository commitRepository;
     private final BranchRepository branchRepository;
     private final CommitServiceUtils commitServiceUtils;
@@ -32,6 +34,7 @@ public class CommitService {
 
     @Transactional
     public Commit createCommit(Long branchId, CreateCommitDTO commitDTO) {
+        concurrencyService.lockBranch(branchId);
         try {
             User user = authUtils.getCurrentUser();
             Branch branch = branchRepository.findById(branchId)
@@ -64,6 +67,8 @@ public class CommitService {
             return commit;
         } catch (Exception e) {
             throw new RuntimeException("Error creating commit: " + e.getMessage(), e);
+        } finally {
+            concurrencyService.unlockBranch(branchId);
         }
     }
 

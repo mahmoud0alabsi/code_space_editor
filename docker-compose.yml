@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  mysql:
+    image: mysql:8
+    container_name: codespace-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: code_space_editor
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data_cse:/var/lib/mysql
+    networks:
+      - codespace-net
+
+  backend:
+    image: codespace-editor-backend:latest
+    container_name: codespace-backend
+    depends_on:
+      - mysql
+    env_file:
+      - .env.production
+    ports:
+      - "8080:8080"
+    networks:
+      - codespace-net
+    volumes:
+      - backend_uploads:/uploads
+
+volumes:
+  mysql_data_cse:
+  backend_uploads:
+
+
+networks:
+  codespace-net:
+    driver: bridge
