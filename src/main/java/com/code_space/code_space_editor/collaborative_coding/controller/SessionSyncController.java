@@ -1,0 +1,51 @@
+package com.code_space.code_space_editor.collaborative_coding.controller;
+
+import java.security.Principal;
+import java.util.List;
+
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Controller;
+
+import com.code_space.code_space_editor.collaborative_coding.dto.BranchSyncDTO;
+import com.code_space.code_space_editor.collaborative_coding.dto.FileSyncDTO;
+import com.code_space.code_space_editor.collaborative_coding.service.SessionStateService;
+
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import lombok.RequiredArgsConstructor;
+
+@Controller
+@RequiredArgsConstructor
+public class SessionSyncController {
+    private final SessionStateService sessionStateService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    @MessageMapping("/sync/project/{projectId}/branch")
+    @SendTo("/topic/sync/project/{projectId}/branch")
+    public BranchSyncDTO createBranch(@DestinationVariable String projectId, BranchSyncDTO branch) {
+        sessionStateService.addBranch(projectId, branch);
+        return branch;
+    }
+
+    @MessageMapping("/sync/project/{projectId}/file")
+    @SendTo("/topic/sync/project/{projectId}/file")
+    public FileSyncDTO createFile(@DestinationVariable String projectId, FileSyncDTO file) {
+        sessionStateService.addFile(projectId, file);
+        return file;
+    }
+
+    @MessageMapping("/sync/project/{projectId}/init")
+    public void initSync(@DestinationVariable String projectId, @Payload String username) {
+        List<FileSyncDTO> files = sessionStateService.getFiles(projectId);
+        System.out.println("======================================================================");
+        System.out.println("Syncing files for project: " + projectId);
+        System.out.println("Files: " + files);
+        System.out.println("Username: " + username);
+        System.out.println("======================================================================");
+
+        messagingTemplate.convertAndSendToUser(username, "/queue/sync/file", files);
+    }
+}

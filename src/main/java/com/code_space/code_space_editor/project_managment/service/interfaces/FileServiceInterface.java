@@ -15,6 +15,8 @@ public interface FileServiceInterface {
 
     void forkFiles(Long projectId, Long branhcId, Commit baseCommit, Commit newCommit);
 
+    void deleteFilesByBranch(Branch branch);
+
     List<File> getAllByCommitId(Long commitId);
 
     String getFileContent(File file);

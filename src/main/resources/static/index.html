@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Group Chat</title>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+
+<body>
+    <h3>Group Chat</h3>
+
+    <select id="groupId">
+        <option value="group1">Group 1</option>
+        <option value="group2">Group 2</option>
+    </select>
+
+    <select id="roomId">
+        <option value="room1">Room 1</option>
+        <option value="room2">Room 2</option>
+    </select>
+
+    <input type="text" id="sender" placeholder="Name" />
+    <input type="text" id="message" placeholder="Type a message" />
+    <button onclick="sendMessage()">Send</button>
+
+    <ul id="chat"></ul>
+
+    <script>
+        const socket = new SockJS("http://127.0.0.1:8080/ws");
+        const stompClient = Stomp.over(socket);
+
+        stompClient.connect({}, function () {
+            console.log("Connected");
+
+            document.getElementById("groupId").addEventListener("change", subscribeToCurrentRoom);
+            document.getElementById("roomId").addEventListener("change", subscribeToCurrentRoom);
+
+            subscribeToCurrentRoom();
+        });
+
+        function subscribeToCurrentRoom() {
+            const groupId = document.getElementById("groupId").value;
+            const roomId = document.getElementById("roomId").value;
+
+            if (window.currentSubscription) {
+                window.currentSubscription.unsubscribe();
+            }
+
+            window.currentSubscription = stompClient.subscribe(`/topic/${groupId}/${roomId}`, function (msg) {
+                const data = JSON.parse(msg.body);
+                const li = document.createElement("li");
+                li.textContent = `${data.sender}: ${data.content}`;
+                document.getElementById("chat").appendChild(li);
+            });
+        }
+
+        function sendMessage() {
+            const groupId = document.getElementById("groupId").value;
+            const roomId = document.getElementById("roomId").value;
+            const sender = document.getElementById("sender").value;
+            const content = document.getElementById("message").value;
+
+            const message = { sender, content, groupId, roomId };
+            stompClient.send("/app/chat.send", {}, JSON.stringify(message));
+            document.getElementById("message").value = '';
+        }
+    </script>
+</body>
+
+</html>

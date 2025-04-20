@@ -28,7 +28,6 @@ public class ForkBranchService {
 
     @Transactional
     public Branch forkBranch(Long projectId, Long baseBranchId, String newBranchName) {
-        System.out.println("============================================");
         User user = authUtils.getCurrentUser();
 
         Branch baseBranch = branchRepository.findById(baseBranchId)
@@ -38,8 +37,6 @@ public class ForkBranchService {
         if (branchRepository.existsByNameAndProjectId(newBranchName, baseBranch.getProject().getId())) {
             throw new IllegalArgumentException("Branch name '" + newBranchName + "' already exists in this project");
         }
-
-        System.out.println("Base branch: " + baseBranch.getName());
 
         Branch newBranch = Branch.builder()
                 .name(newBranchName)
@@ -52,12 +49,9 @@ public class ForkBranchService {
                 .build();
         newBranch = branchRepository.save(newBranch);
 
-        System.out.println("New branch created: " + newBranch.getName());
-
         // Get the latest commit from the base branch
         Commit baseCommit = commitServiceUtils.getLatestCommit(baseBranchId);
         if (baseCommit != null) {
-            System.out.println("Base commit: " + baseCommit.getId());
             // Create a new commit for the forked branch
             Commit newCommit = Commit.builder()
                     .author(user.getId())
@@ -68,15 +62,9 @@ public class ForkBranchService {
                     .build();
             newCommit = commitRepository.save(newCommit);
 
-            System.out.println("New commit created: " + newCommit.getId());
-
             // Fork files from the base commit to the new commit
             fileService.forkFiles(projectId, newBranch.getId(), baseCommit, newCommit);
-
-            System.out.println("Files forked from commit " + baseCommit.getId() + " to commit " + newCommit.getId());
         }
-
-        System.out.println("============================================");
 
         return newBranch;
     }

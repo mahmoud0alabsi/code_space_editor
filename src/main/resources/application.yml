@@ -3,9 +3,9 @@ spring:
         name: code-space-editor
     
     datasource:
-        url: jdbc:mysql://localhost:3306/code_space_editor
-        username: root
-        password: root
+        url: ${MYSQL_URL}
+        username: ${MYSQL_USERNAME}
+        password: ${MYSQL_PASSWORD}
         driver-class-name: com.mysql.cj.jdbc.Driver
         hikari:
             maximum-pool-size: 10
@@ -15,14 +15,6 @@ spring:
             connection-timeout: 30000
             pool-name: HikariCP
 
-    data:
-        mongodb:
-            uri: mongodb://root:root@localhost:27017/code_space_editor_mongo
-            database: code_space_editor_mongo
-            port: 27017
-            username: root
-            password: root
-
     jpa:
         hibernate:
             ddl-auto: update
@@ -30,21 +22,21 @@ spring:
 
     security:
         jwt:
-            secret-key: a64b47cb3ed11aec8730bf3ef3875cd3e966e39fc84502ff55be072d8e3f14bb19e091f1715c16241cc3edeacb5274664f649beda185d40e7ceba1af7f69b755aae511c41dcafd6c151af58fbdb7bf27b8a86cd646ecb3aea71cbe85148ba3f490756af08001519d8881b86cf043bb4b50b43c1645879ea90fea675d9e0d9533a30edf8fea9546e20b60708445bfba444c0fb6947b9fc096be5031649b0e7f05e5c27be28d8c5c22dcfcec7f6c20f39bce2823985de8b591424922a6bc17c429693d43e494cd0df4bdcad03f7eef968520c8cbd7769a97f4fd0ecbbb8b755c5f85ae1b112e27a466fa67fe1580ed8c0b7bced66639e33078611d06ae59a5e45a
-            expiration: 3600000 # 1 hour in milliseconds
+            secret-key: ${JWT_SECRET_KEY}
+            expiration: 21600000 # 6 hour in milliseconds
             refresh-token:
                 expiration: 604800000 # 7 days in milliseconds
         oauth2:
             client:
                 registration:
                     google:
-                        client-id: 224722490172-c9ijknbrg6li81uceoauujv7gv5a00ad.apps.googleusercontent.com
-                        client-secret: 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
+                        client-id: ${GOOGLE_CLIENT_ID}
+                        client-secret: ${GOOGLE_CLIENT_SECRET}
                         redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
                         scope: profile, email
                     github:
-                        client-id: Ov23lidXCsvv0deXVdqR
-                        client-secret: 01531b929272cde9a014d4fae8ae07968960379a
+                        client-id: ${GITHUB_CLIENT_ID}
+                        client-secret: ${GITHUB_CLIENT_SECRET}
                         scope: read:user,user:email
                         redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
                 provider:
@@ -65,4 +57,15 @@ logging:
 
 file:
   storage:
-    root-dir: E:/Atypon training/assignments/final_project/code-space-editor/src/main/resources/uploads
+    root-dir: ${FILE_STORAGE_ROOT_DIR}
+
+code:
+  execution:
+    use-docker: true
+    default-timeout-seconds: 10
+    max-timeout-seconds: 30
+    memory-limit: 100
+    cpu-limit: "0.5"
+    max-output-size: 1048576
+    max-executions-per-minute: 10
+    max-executions-per-hour: 100

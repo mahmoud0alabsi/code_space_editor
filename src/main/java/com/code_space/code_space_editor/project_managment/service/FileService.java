@@ -150,6 +150,24 @@ public class FileService implements FileServiceInterface {
     }
 
     @Override
+    @Transactional
+    public void deleteFilesByBranch(Branch branch) {
+        List<File> files = fileRepository.findByBranchId(branch.getId());
+        if (files.isEmpty()) {
+            return;
+        }
+
+        for (File file : files) {
+            try {
+                fileStorageService.deleteFileByPath(file.getPath());
+                fileRepository.delete(file);
+            } catch (Exception e) {
+                throw new FileStorageException("Error deleting file: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
     public String getFileContent(File file) {
         return fileStorageService.readFile(file.getPath());
     }

@@ -21,9 +21,12 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import com.code_space.code_space_editor.project_managment.dto.branch.BranchDTO;
 import com.code_space.code_space_editor.project_managment.dto.branch.CreateBranchDTO;
 import com.code_space.code_space_editor.project_managment.dto.branch.ForkBranchDTO;
+import com.code_space.code_space_editor.project_managment.dto.merge.MergeBranchRequestDTO;
+import com.code_space.code_space_editor.project_managment.dto.merge.MergeResultDTO;
 import com.code_space.code_space_editor.project_managment.entity.sql.Branch;
 import com.code_space.code_space_editor.project_managment.mapper.BranchMapper;
 import com.code_space.code_space_editor.project_managment.service.ForkBranchService;
+import com.code_space.code_space_editor.project_managment.service.MergeBranchService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -38,6 +41,7 @@ public class BranchController {
 
     private final BranchService branchService;
     private final ForkBranchService forkBranchService;
+    private final MergeBranchService mergeBranchService;
     private final BranchMapper branchMapper;
 
     @PostMapping("/p/{projectId}")
@@ -70,6 +74,17 @@ public class BranchController {
             @Valid @RequestBody ForkBranchDTO branch) {
         return forkBranchService.forkBranch(
                 projectId, branchId, branch.getName());
+    }
+
+    @PostMapping("/p/{projectId}/b/merge")
+    @PreAuthorize("@permissionService.hasProjectPermission(#projectId, 'COLLABORATOR')")
+    @Operation(summary = "Merge a source branch into a target branch")
+    public ResponseEntity<MergeResultDTO> mergeBranch(
+            @PathVariable Long projectId,
+            @Valid @RequestBody MergeBranchRequestDTO request) {
+        MergeResultDTO result = mergeBranchService.mergeBranch(request.getTargetBranchId(),
+                request.getSourceBranchId());
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/p/{projectId}")

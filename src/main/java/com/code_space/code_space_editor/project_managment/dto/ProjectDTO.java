@@ -1,10 +1,6 @@
 package com.code_space.code_space_editor.project_managment.dto;
 
 import java.time.Instant;
-import java.util.List;
-
-import com.code_space.code_space_editor.project_managment.entity.sql.Branch;
-import com.code_space.code_space_editor.project_managment.entity.sql.ProjectMember;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -20,6 +16,7 @@ public class ProjectDTO {
     private Long id;
 
     private Long ownerId;
+    private String ownerName;
 
     @NotNull(message = "Project name must not be null")
     @Size(min = 3, max = 100, message = "Project name must be between 3 and 100 characters")
@@ -30,7 +27,4 @@ public class ProjectDTO {
 
     private Instant createdAt;
     private Instant updatedAt;
-
-    private List<Branch> branches;
-    private List<ProjectMember> members;
 }

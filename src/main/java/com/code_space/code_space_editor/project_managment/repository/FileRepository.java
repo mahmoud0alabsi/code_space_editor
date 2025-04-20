@@ -39,4 +39,7 @@ public interface FileRepository extends JpaRepository<File, Long> {
                         @Param("fileId") Long fileId,
                         @Param("userId") Long userId,
                         @Param("allowedRoles") List<ProjectRole> allowedRoles);
+
+        @Query("SELECT f FROM File f WHERE f.branch.id = :branchId")
+        List<File> findByBranchId(Long branchId);
 }

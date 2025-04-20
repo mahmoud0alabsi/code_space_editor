@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -55,9 +56,6 @@ public class CommitController {
             @PathVariable Long projectId,
             @PathVariable Long branchId) {
         List<Commit> commits = commitService.getAllCommits(branchId);
-        System.out.println("======================================");
-        System.out.println("Commit: " + commits.size());
-        System.out.println("======================================");
         return ResponseEntity.ok(
                 commits.stream()
                         .map(commitMapper::toDTO)
@@ -98,6 +96,21 @@ public class CommitController {
             return ResponseEntity.noContent().build(); // 204 No Content
         }
         return ResponseEntity.ok(fileDTOs);
+    }
+
+    @CrossOrigin(origins = "http://localhost:3000")
+    @GetMapping("/p/{projectId}/b/{branchId}/latest/files/{fileId}")
+    @PreAuthorize("@permissionService.hasBranchPermission(#projectId, #branchId, 'VIEWER')")
+    @Operation(summary = "Get file content by file ID in the latest commit")
+    public ResponseEntity<String> getFileContentById(
+            @PathVariable Long projectId,
+            @PathVariable Long branchId,
+            @PathVariable Long fileId) {
+        String fileContent = commitService.getFileContentById(fileId);
+        if (fileContent.isEmpty()) {
+            return ResponseEntity.noContent().build(); // 204 No Content
+        }
+        return ResponseEntity.ok(fileContent);
     }
 
     @GetMapping("/p/{projectId}/b/{branchId}/c/{commitId}/files")

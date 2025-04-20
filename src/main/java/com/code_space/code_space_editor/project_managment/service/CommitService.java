@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.code_space.code_space_editor.auth.entity.User;
+import com.code_space.code_space_editor.auth.utility.AuthUtils;
 import com.code_space.code_space_editor.exceptions.ResourceNotFoundException;
 import com.code_space.code_space_editor.project_managment.dto.commit.CreateCommitDTO;
 import com.code_space.code_space_editor.project_managment.dto.file.CreateFileDTO;
@@ -26,10 +28,12 @@ public class CommitService {
     private final BranchRepository branchRepository;
     private final CommitServiceUtils commitServiceUtils;
     private final FileService fileService;
+    private final AuthUtils authUtils;
 
     @Transactional
     public Commit createCommit(Long branchId, CreateCommitDTO commitDTO) {
         try {
+            User user = authUtils.getCurrentUser();
             Branch branch = branchRepository.findById(branchId)
                     .orElseThrow(() -> new ResourceNotFoundException("Branch not found with ID: " + branchId));
 
@@ -40,7 +44,8 @@ public class CommitService {
             }
 
             Commit commit = Commit.builder()
-                    .author(branch.getAuthorId())
+                    .author(user.getId())
+                    .authorName(user.getUsername())
                     .branch(branch)
                     .message(commitDTO.getMessage())
                     .createdAt(Instant.now())
@@ -91,5 +96,10 @@ public class CommitService {
             return Collections.emptyList();
         }
         return fileService.getFilesByCommitId(commitId, includeContent);
+    }
+
+    @Transactional
+    public String getFileContentById(Long fileId) {
+        return fileService.getFileContent(fileId);
     }
 }

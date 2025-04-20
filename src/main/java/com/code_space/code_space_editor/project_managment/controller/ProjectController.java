@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.code_space.code_space_editor.exceptions.ResourceNotFoundException;
 import com.code_space.code_space_editor.project_managment.dto.ProjectDTO;
 import com.code_space.code_space_editor.project_managment.dto.project.CreateProjectDTO;
+import com.code_space.code_space_editor.project_managment.dto.project.ProjectMembershipDTO;
 import com.code_space.code_space_editor.project_managment.entity.sql.Project;
 import com.code_space.code_space_editor.project_managment.mapper.ProjectMapper;
 import com.code_space.code_space_editor.project_managment.service.ProjectService;
@@ -40,9 +41,9 @@ public class ProjectController {
 
     @PostMapping
     @Operation(summary = "Create a new project")
-    public ResponseEntity<String> createProject(@Valid @RequestBody CreateProjectDTO dto) {
+    public ResponseEntity<ProjectDTO> createProject(@Valid @RequestBody CreateProjectDTO dto) {
         Project project = projectService.create(dto);
-        return ResponseEntity.ok("Project created with ID: " + project.getId());
+        return ResponseEntity.ok(projectMapper.toDTO(project));
     }
 
     @PutMapping("/{id}")
@@ -61,13 +62,8 @@ public class ProjectController {
 
     @GetMapping
     @Operation(summary = "Get all projects")
-    public ResponseEntity<List<ProjectDTO>> getAllProjects() {
-        List<Project> projects = projectService.getUserProjects();
-        List<ProjectDTO> projectDTOs = projects.stream()
-                .map(projectMapper::toDTO)
-                .toList();
-
-        return ResponseEntity.ok(projectDTOs);
+    public ResponseEntity<List<ProjectMembershipDTO>> getAllProjects() {
+        return ResponseEntity.ok(projectService.getUserProjects());
     }
 
     @GetMapping("/{id}")

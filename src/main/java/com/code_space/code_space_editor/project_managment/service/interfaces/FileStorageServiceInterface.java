@@ -7,4 +7,5 @@ public interface FileStorageServiceInterface {
     String readFile(String filePath);
 
     void deleteFile(Long projectId, Long branchId, Long commitId, Long fileId, String extension);
+    void deleteFileByPath(String filePath);
 }

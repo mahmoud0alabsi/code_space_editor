@@ -69,8 +69,15 @@ public class PermissionService {
      * Check if user has permission over file using a single optimized query
      * Verifies project membership, branch ownership, and file ownership in one go
      */
+    // TODO: This not implemented correctly
     public boolean hasFilePermission(Long projectId, Long branchId, Long fileId, String requiredRole) {
         Long userId = authUtils.getCurrentUserId();
+
+        if (!hasProjectPermission(projectId, requiredRole)) {
+            throw new AccessDeniedException("You are not authorized to access this project.");
+        } else if (!hasBranchPermission(projectId, branchId, requiredRole)) {
+            throw new AccessDeniedException("You are not authorized to access this branch.");
+        }
 
         // Use optimized query for performance
         boolean hasPermission = hasFilePermissionDirect(projectId, branchId, fileId, userId, requiredRole);

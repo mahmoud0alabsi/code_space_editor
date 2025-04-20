@@ -32,6 +32,8 @@ public class Commit {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private Long author;
+    private String authorName;
+    
     private String message;
     private Instant createdAt;
 

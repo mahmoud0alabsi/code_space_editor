@@ -53,6 +53,15 @@ public class FileStorageService implements FileStorageServiceInterface {
         }
     }
 
+    @Override
+    public void deleteFileByPath(String filePath) {
+        try {
+            Files.deleteIfExists(Paths.get(filePath));
+        } catch (IOException e) {
+            throw new FileStorageException("Failed to delete file at " + filePath, e);
+        }
+    }
+
     private Path buildFilePath(Long projectId, Long branchId, Long commitId, Long fileId, String extension) {
         // projectId/branchId/commitId/fileId.extension
         return Paths.get(ROOT_DIR,

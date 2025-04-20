@@ -1,0 +1,221 @@
+#
+# There is insufficient memory for the Java Runtime Environment to continue.
+# Native memory allocation (mmap) failed to map 335544320 bytes for G1 virtual space
+# Possible reasons:
+#   The system is out of physical RAM or swap space
+#   The process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap
+# Possible solutions:
+#   Reduce memory load on the system
+#   Increase physical memory or swap space
+#   Check if swap backing store is full
+#   Decrease Java heap size (-Xmx/-Xms)
+#   Decrease number of Java threads
+#   Decrease Java thread stack sizes (-Xss)
+#   Set larger code cache with -XX:ReservedCodeCacheSize=
+#   JVM is running with Zero Based Compressed Oops mode in which the Java heap is
+#     placed in the first 32GB address space. The Java Heap base address is the
+#     maximum limit for the native heap growth. Please use -XX:HeapBaseMinAddress
+#     to set the Java Heap base and to place the Java Heap above 32GB virtual address.
+# This output file may be truncated or incomplete.
+#
+#  Out of Memory Error (os_windows.cpp:3532), pid=36668, tid=32376
+#
+# JRE version:  (17.0.2+8) (build )
+# Java VM: Java HotSpot(TM) 64-Bit Server VM (17.0.2+8-LTS-86, mixed mode, sharing, tiered, compressed oops, compressed class ptrs, g1 gc, windows-amd64)
+# No core dump will be written. Minidumps are not enabled by default on client versions of Windows
+#
+
+---------------  S U M M A R Y ------------
+
+Command Line: -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=56399 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=code-space-editor -XX:+ShowCodeDetailsInExceptionMessages com.code_space.code_space_editor.CodeSpaceEditorApplication
+
+Host: Intel(R) Core(TM) i5-8265U CPU @ 1.60GHz, 8 cores, 19G,  Windows 11 , 64 bit Build 26100 (10.0.26100.3775)
+Time: Fri Apr 18 11:10:00 2025 Jordan Standard Time elapsed time: 2.473091 seconds (0d 0h 0m 2s)
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x000001ba923fb190):  JavaThread "Unknown thread" [_thread_in_vm, id=32376, stack(0x0000004134200000,0x0000004134300000)]
+
+Stack: [0x0000004134200000,0x0000004134300000]
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [jvm.dll+0x670baa]
+V  [jvm.dll+0x7cfcb4]
+V  [jvm.dll+0x7d145e]
+V  [jvm.dll+0x7d1ac3]
+V  [jvm.dll+0x242bc5]
+V  [jvm.dll+0x66dac9]
+V  [jvm.dll+0x662412]
+V  [jvm.dll+0x300c0b]
+V  [jvm.dll+0x3081a6]
+V  [jvm.dll+0x357d0e]
+V  [jvm.dll+0x357f3f]
+V  [jvm.dll+0x2d7ec8]
+V  [jvm.dll+0x2d8e34]
+V  [jvm.dll+0x7a18c1]
+V  [jvm.dll+0x365a91]
+V  [jvm.dll+0x780d2c]
+V  [jvm.dll+0x3e845f]
+V  [jvm.dll+0x3e9f01]
+C  [jli.dll+0x527b]
+C  [ucrtbase.dll+0x37b0]
+C  [KERNEL32.DLL+0x2e8d7]
+C  [ntdll.dll+0xb14fc]
+
+
+---------------  P R O C E S S  ---------------
+
+Threads class SMR info:
+_java_thread_list=0x00007ff86f819858, length=0, elements={
+}
+
+Java Threads: ( => current thread )
+
+Other Threads:
+  0x000001ba92457d80 GCTaskThread "GC Thread#0" [stack: 0x0000004134300000,0x0000004134400000] [id=36596]
+  0x000001ba92462ae0 ConcurrentGCThread "G1 Main Marker" [stack: 0x0000004134400000,0x0000004134500000] [id=12040]
+  0x000001ba92463400 ConcurrentGCThread "G1 Conc#0" [stack: 0x0000004134500000,0x0000004134600000] [id=31272]
+
+[error occurred during error reporting (printing all threads), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ff86f0688a7]
+
+VM state: not at safepoint (not fully initialized)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x000001ba923f71a0] Heap_lock - owner thread: 0x000001ba923fb190
+
+Heap address: 0x00000006c1c00000, size: 5092 MB, Compressed Oops mode: Zero based, Oop shift amount: 3
+
+CDS archive(s) mapped at: [0x0000000000000000-0x0000000000000000-0x0000000000000000), size 0, SharedBaseAddress: 0x0000000800000000, ArchiveRelocationMode: 0.
+Narrow klass base: 0x0000000000000000, Narrow klass shift: 0, Narrow klass range: 0x0
+
+GC Precious Log:
+<Empty>
+
+Heap:
+ garbage-first heap   total 0K, used 0K [0x00000006c1c00000, 0x0000000800000000)
+  region size 4096K, 0 young (0K), 0 survivors (0K)
+
+[error occurred during error reporting (printing heap information), id 0xc0000005, EXCEPTION_ACCESS_VIOLATION (0xc0000005) at pc=0x00007ff86f449f19]
+
+GC Heap History (0 events):
+No events
+
+Deoptimization events (0 events):
+No events
+
+Classes unloaded (0 events):
+No events
+
+Classes redefined (0 events):
+No events
+
+Internal exceptions (0 events):
+No events
+
+VM Operations (0 events):
+No events
+
+Events (1 events):
+Event: 0.025 Loaded shared library C:\Program Files\Java\jdk-17.0.2\bin\java.dll
+
+
+Dynamic libraries:
+0x00007ff7feed0000 - 0x00007ff7feee0000 	C:\Program Files\Java\jdk-17.0.2\bin\java.exe
+0x00007ff917e20000 - 0x00007ff918080000 	C:\WINDOWS\SYSTEM32\ntdll.dll
+0x00007ff9178c0000 - 0x00007ff917987000 	C:\WINDOWS\System32\KERNEL32.DLL
+0x00007ff914fd0000 - 0x00007ff91539a000 	C:\WINDOWS\System32\KERNELBASE.dll
+0x00007ff9155b0000 - 0x00007ff9156fb000 	C:\WINDOWS\System32\ucrtbase.dll
+0x00007ff901d30000 - 0x00007ff901d4a000 	C:\Program Files\Java\jdk-17.0.2\bin\VCRUNTIME140.dll
+0x00007ff8ff3e0000 - 0x00007ff8ff3f8000 	C:\Program Files\Java\jdk-17.0.2\bin\jli.dll
+0x00007ff9169c0000 - 0x00007ff916a72000 	C:\WINDOWS\System32\ADVAPI32.dll
+0x00007ff917420000 - 0x00007ff9174c9000 	C:\WINDOWS\System32\msvcrt.dll
+0x00007ff916c00000 - 0x00007ff916ca6000 	C:\WINDOWS\System32\sechost.dll
+0x00007ff915dd0000 - 0x00007ff915ee6000 	C:\WINDOWS\System32\RPCRT4.dll
+0x00007ff9174d0000 - 0x00007ff91769c000 	C:\WINDOWS\System32\USER32.dll
+0x00007ff8fc4e0000 - 0x00007ff8fc777000 	C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.3624_none_3e086962e3345f24\COMCTL32.dll
+0x00007ff915900000 - 0x00007ff915927000 	C:\WINDOWS\System32\win32u.dll
+0x00007ff917a00000 - 0x00007ff917a2a000 	C:\WINDOWS\System32\GDI32.dll
+0x00007ff915ab0000 - 0x00007ff915be1000 	C:\WINDOWS\System32\gdi32full.dll
+0x00007ff915500000 - 0x00007ff9155a3000 	C:\WINDOWS\System32\msvcp_win.dll
+0x00007ff906490000 - 0x00007ff90649b000 	C:\WINDOWS\SYSTEM32\VERSION.dll
+0x00007ff917a30000 - 0x00007ff917a5f000 	C:\WINDOWS\System32\IMM32.DLL
+0x00007ff90aab0000 - 0x00007ff90aabc000 	C:\Program Files\Java\jdk-17.0.2\bin\vcruntime140_1.dll
+0x00007ff830b30000 - 0x00007ff830bbd000 	C:\Program Files\Java\jdk-17.0.2\bin\msvcp140.dll
+0x00007ff86ed80000 - 0x00007ff86f941000 	C:\Program Files\Java\jdk-17.0.2\bin\server\jvm.dll
+0x00007ff9173e0000 - 0x00007ff9173e8000 	C:\WINDOWS\System32\PSAPI.DLL
+0x00007ff8f8c40000 - 0x00007ff8f8c4a000 	C:\WINDOWS\SYSTEM32\WSOCK32.dll
+0x00007ff917c20000 - 0x00007ff917c94000 	C:\WINDOWS\System32\WS2_32.dll
+0x00007ff8fe8d0000 - 0x00007ff8fe906000 	C:\WINDOWS\SYSTEM32\WINMM.dll
+0x00007ff913f00000 - 0x00007ff913f1a000 	C:\WINDOWS\SYSTEM32\kernel.appcore.dll
+0x00007ff901d20000 - 0x00007ff901d2a000 	C:\Program Files\Java\jdk-17.0.2\bin\jimage.dll
+0x00007ff911c10000 - 0x00007ff911e51000 	C:\WINDOWS\SYSTEM32\DBGHELP.DLL
+0x00007ff916090000 - 0x00007ff916412000 	C:\WINDOWS\System32\combase.dll
+0x00007ff917ad0000 - 0x00007ff917ba6000 	C:\WINDOWS\System32\OLEAUT32.dll
+0x00007ff8f7e40000 - 0x00007ff8f7e79000 	C:\WINDOWS\SYSTEM32\dbgcore.DLL
+0x00007ff915460000 - 0x00007ff9154f9000 	C:\WINDOWS\System32\bcryptPrimitives.dll
+0x00007ff8a6310000 - 0x00007ff8a6335000 	C:\Program Files\Java\jdk-17.0.2\bin\java.dll
+
+dbghelp: loaded successfully - version: 4.0.5 - missing functions: none
+symbol engine: initialized successfully - sym options: 0x614 - pdb path: .;C:\Program Files\Java\jdk-17.0.2\bin;C:\WINDOWS\SYSTEM32;C:\WINDOWS\WinSxS\amd64_microsoft.windows.common-controls_6595b64144ccf1df_6.0.26100.3624_none_3e086962e3345f24;C:\Program Files\Java\jdk-17.0.2\bin\server
+
+VM Arguments:
+jvm_args: -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=56399 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=code-space-editor -XX:+ShowCodeDetailsInExceptionMessages 
+java_command: com.code_space.code_space_editor.CodeSpaceEditorApplication
+java_class_path (initial): E:\Atypon training\assignments\final_project\code-space-editor\target\classes;C:\Users\medoa\.m2\repository\org\springframework\boot\spring-boot-starter-data-jdbc\3.4.4\spring-boot-starter-data-jdbc-3.4.4.jar;C:\Users\medoa\.m2\repository\org\springframework\boot\spring-boot-starter-jdbc\3.4.4\spring-boot-starter-jdbc-3.4.4.jar;C:\Users\medoa\.m2\repository\com\zaxxer\HikariCP\5.1.0\HikariCP-5.1.0.jar;C:\Users\medoa\.m2\repository\org\springframework\spring-jdbc\6.2.5\spring-jdbc-6.2.5.jar;C:\Users\medoa\.m2\repository\org\springframework\data\spring-data-jdbc\3.4.4\spring-data-jdbc-3.4.4.jar;C:\Users\medoa\.m2\repository\org\springframework\data\spring-data-relational\3.4.4\spring-data-relational-3.4.4.jar;C:\Users\medoa\.m2\repository\org\springframework\data\spring-data-commons\3.4.4\spring-data-commons-3.4.4.jar;C:\Users\medoa\.m2\repository\org\springframework\spring-tx\6.2.5\spring-tx-6.2.5.jar;C:\Users\medoa\.m2\repository\org\springframework\spring-context\6.2.5\spring-context-6.2.5.jar;C:\Users\medoa\.m2\repository\org\springframework\spring-beans\6.2.5\spring-beans-6.2.5.jar;C:\Users\medoa\.m2\repository\org\slf4j\slf4j-api\2.0.17\slf4j-api-2.0.17.jar;C:\Users\medoa\.m2\repository\org\springframework\boot\spring-boot-starter-data-jpa\3.4.4\spring-boot-starter-data-jpa-3.4.4.jar;C:\Users\medoa\.m2\repository\org\springframework\boot\spring-boot-starter\3.4.4\spring-boot-starter-3.4.4.jar;C:\Users\medoa\.m2\repository\org\springframework\boot\spring-boot-starter-logging\3.4.4\spring-boot-starter-logging-3.4.4.jar;C:\Users\medoa\.m2\repository\ch\qos\logback\logback-classic\1.5.18\logback-classic-1.5.18.jar;C:\Users\medoa\.m2\repository\ch\qos\logback\logback-core\1.5.18\logback-core-1.5.18.jar;C:\Users\medoa\.m2\repository\org\apache\logging\log4j\log4j-to-slf4j\2.24.3\log4j-to-slf4j-2.24.3.jar;C:\Users\medoa\.m2\repository\org\apache\logging\log4j\log4j-api\2.24.3\log4j-api-2.24.3.jar;C:\Users\medoa\.m2\repository\org\slf4j\jul-
+Launcher Type: SUN_STANDARD
+
+[Global flags]
+     intx CICompilerCount                          = 4                                         {product} {ergonomic}
+     uint ConcGCThreads                            = 2                                         {product} {ergonomic}
+     uint G1ConcRefinementThreads                  = 8                                         {product} {ergonomic}
+   size_t G1HeapRegionSize                         = 4194304                                   {product} {ergonomic}
+    uintx GCDrainStackTargetSize                   = 64                                        {product} {ergonomic}
+   size_t InitialHeapSize                          = 335544320                                 {product} {ergonomic}
+     bool ManagementServer                         = true                                      {product} {command line}
+   size_t MarkStackSize                            = 4194304                                   {product} {ergonomic}
+   size_t MaxHeapSize                              = 5339348992                                {product} {ergonomic}
+   size_t MinHeapDeltaBytes                        = 4194304                                   {product} {ergonomic}
+   size_t MinHeapSize                              = 8388608                                   {product} {ergonomic}
+    uintx NonNMethodCodeHeapSize                   = 5839372                                {pd product} {ergonomic}
+    uintx NonProfiledCodeHeapSize                  = 122909434                              {pd product} {ergonomic}
+    uintx ProfiledCodeHeapSize                     = 122909434                              {pd product} {ergonomic}
+    uintx ReservedCodeCacheSize                    = 251658240                              {pd product} {ergonomic}
+     bool SegmentedCodeCache                       = true                                      {product} {ergonomic}
+     bool ShowCodeDetailsInExceptionMessages       = true                                   {manageable} {command line}
+   size_t SoftMaxHeapSize                          = 5339348992                             {manageable} {ergonomic}
+     bool UseCompressedClassPointers               = true                           {product lp64_product} {ergonomic}
+     bool UseCompressedOops                        = true                           {product lp64_product} {ergonomic}
+     bool UseG1GC                                  = true                                      {product} {ergonomic}
+     bool UseLargePagesIndividualAllocation        = false                                  {pd product} {ergonomic}
+
+Logging:
+Log output configuration:
+ #0: stdout all=warning uptime,level,tags
+ #1: stderr all=off uptime,level,tags
+
+Environment Variables:
+JAVA_HOME=C:\Program Files\Java\jdk-17.0.2\
+PATH=C:\Program Files (x86)\VMware\VMware Player\bin\;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\MinGW\bin;C:\Program Files\Java\jdk-17.0.2\bin;C:\Program Files (x86)\dotnet\;C:\Program Files\NVIDIA Corporation\NVIDIA NvDLISR;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Program Files (x86)\Microsoft SQL Server\160\Tools\Binn\;C:\Program Files\Microsoft SQL Server\160\Tools\Binn\;C:\Program Files\Microsoft SQL Server\Client SDK\ODBC\170\Tools\Binn\;C:\Program Files\Microsoft SQL Server\160\DTS\Binn\;C:\Program Files (x86)\Microsoft SQL Server\160\DTS\Binn\;C:\Program Files\PuTTY\;C:\Program Files\dotnet\;C:\Program Files (x86)\Microchip\MPLAB C32 Suite\bin;c:\program files (x86)\quartus\bin;C:\ProgramData\ComposerSetup\bin;C:\xampp\php;C:\Program Files\nodejs\;C:\ProgramData\chocolatey\bin;C:\Users\medoa\AppData\Local\Pub\Cache\bin;C:\Program Files\MATLAB\R2024b\bin;C:\Program Files\MySQL\MySQL Server 8.0\bin;C:\Program Files\Docker\Docker\resources\bin;C:\Program Files\Apache\Maven\bin;C:\Program Files\MySQL\MySQL Shell 8.0\bin\;C:\Users\medoa\AppData\Local\Programs\Python\Python310\Scripts\;C:\Users\medoa\AppData\Local\Programs\Python\Python310\;C:\Users\medoa\AppData\Local\Microsoft\WindowsApps;C:\Users\medoa\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\medoa\AppData\Local\GitHubDesktop\bin;C:\Users\medoa\AppData\Local\Programs\Azure Dev CLI\;C:\Program Files\Azure Data Studio\bin;C:\flutter\bin;C:\dart-sdk\bin;C:\Users\medoa\AppData\Roaming\Composer\vendor\bin;C:\Users\medoa\AppData\Roaming\npm;C:\Users\medoa\AppData\Local\Pub\Cache\bin\flutterfire.bat;;C:\Program Files\Seelen\Seelen UI;C:\Users\medoa\AppData\Local\Programs\Ollama;c:\Users\medoa\.vscode\extensions\ms-python.debugpy-2025.6.0-win32-x64\bundled\scripts\noConfigScripts;c:\Users\medoa\AppData\Roami
+USERNAME=medoa
+LANG=en_US.UTF-8
+OS=Windows_NT
+PROCESSOR_IDENTIFIER=Intel64 Family 6 Model 142 Stepping 12, GenuineIntel
+
+
+
+---------------  S Y S T E M  ---------------
+
+OS:
+ Windows 11 , 64 bit Build 26100 (10.0.26100.3775)
+OS uptime: 8 days 21:39 hours
+Hyper-V role detected
+
+CPU: total 8 (initial active 8) (4 cores per cpu, 2 threads per core) family 6 model 142 stepping 12 microcode 0xea, cx8, cmov, fxsr, ht, mmx, 3dnowpref, sse, sse2, sse3, ssse3, sse4.1, sse4.2, popcnt, lzcnt, tsc, tscinvbit, avx, avx2, aes, erms, clmul, bmi1, bmi2, adx, fma, vzeroupper, clflush, clflushopt, hv
+
+Memory: 4k page, system-wide physical 20360M (18M free)
+TotalPageFile size 51964M (AvailPageFile size 371M)
+current process WorkingSet (physical memory assigned to process): 12M, peak: 12M
+current process commit charge ("private bytes"): 60M, peak: 380M
+
+vm_info: Java HotSpot(TM) 64-Bit Server VM (17.0.2+8-LTS-86) for windows-amd64 JRE (17.0.2+8-LTS-86), built on Dec  7 2021 21:51:03 by "mach5one" with MS VC++ 16.8 / 16.9 (VS2019)
+
+END.

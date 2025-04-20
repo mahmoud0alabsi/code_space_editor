@@ -29,6 +29,7 @@ public class Project {
     private Long ownerId;
 
     private String name;
+    private String ownerName;
     private String description;
 
     private Instant createdAt;

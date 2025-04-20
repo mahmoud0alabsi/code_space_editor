@@ -6,9 +6,11 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import com.code_space.code_space_editor.auth.entity.User;
 import com.code_space.code_space_editor.auth.utility.AuthUtils;
 import com.code_space.code_space_editor.project_managment.entity.enums.ProjectRole;
 import com.code_space.code_space_editor.project_managment.dto.project.CreateProjectDTO;
+import com.code_space.code_space_editor.project_managment.dto.project.ProjectMembershipDTO;
 import com.code_space.code_space_editor.project_managment.entity.sql.Project;
 import com.code_space.code_space_editor.project_managment.entity.sql.ProjectMember;
 import com.code_space.code_space_editor.project_managment.repository.ProjectMemberRepository;
@@ -26,8 +28,10 @@ public class ProjectService {
 
     @Transactional
     public Project create(CreateProjectDTO projectDto) {
+        User user = authUtils.getCurrentUser();
         Project project = Project.builder()
-                .ownerId(authUtils.getCurrentUserId())
+                .ownerId(user.getId())
+                .ownerName(user.getUsername())
                 .name(projectDto.getName())
                 .description(projectDto.getDescription())
                 .createdAt(Instant.now())
@@ -37,11 +41,6 @@ public class ProjectService {
                 .build();
 
         Project newProject = projectRepository.save(project);
-
-        System.out.println("=============================");
-        System.out.println("Project created: " + newProject.getName());
-        System.out.println("Project Id: " + newProject.getId());
-        System.out.println("=============================");
 
         // Add the owner as a member of the project with the role "OWNER"
         ProjectMember ownerMember = ProjectMember.builder()
@@ -73,12 +72,29 @@ public class ProjectService {
         return projectRepository.findById(id);
     }
 
-    public List<Project> getUserProjects() {
-        // get the current user id from the security context
+    public List<ProjectMembershipDTO> getUserProjects() {
         Long userId = authUtils.getCurrentUserId();
         // get the projects where the user is a member
-        return projectMemberRepository.findByUserId(userId).stream()
-                .map(ProjectMember::getProject)
+        List<ProjectMember> projectMembers = projectMemberRepository.findByUserId(userId);
+        if (projectMembers.isEmpty()) {
+            return List.of(); // Return an empty list if the user is not a member of any project
+        }
+
+        List<ProjectMembershipDTO> projects = projectMembers.stream()
+                .map(member -> {
+                    Project project = member.getProject();
+                    return ProjectMembershipDTO.builder()
+                            .id(project.getId())
+                            .ownerName(project.getOwnerName())
+                            .role(member.getRole())
+                            .name(project.getName())
+                            .description(project.getDescription())
+                            .createdAt(project.getCreatedAt())
+                            .updatedAt(project.getUpdatedAt())
+                            .build();
+                })
                 .toList();
+
+        return projects;
     }
 }

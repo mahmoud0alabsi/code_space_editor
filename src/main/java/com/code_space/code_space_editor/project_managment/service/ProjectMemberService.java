@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.code_space.code_space_editor.auth.utility.AuthUtils;
 import com.code_space.code_space_editor.project_managment.entity.enums.ProjectRole;
 import com.code_space.code_space_editor.project_managment.entity.sql.Project;
 import com.code_space.code_space_editor.project_managment.entity.sql.ProjectMember;
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 public class ProjectMemberService {
     private final ProjectMemberRepository projectMemberRepository;
     private final ProjectRepository projectRepository;
+    private final AuthUtils authUtils;
 
     @Transactional
     public ProjectMember add(Long projectId, Long userId, ProjectRole role) {
@@ -60,4 +62,9 @@ public class ProjectMemberService {
         return projectMemberRepository.findAllByProjectId(projectId);
     }
 
+    public ProjectMember getProjectMemberOrThrow(Long projectId) {
+        Long userId = authUtils.getCurrentUserId();
+        return projectMemberRepository.findByProjectIdAndUserId(projectId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found in project"));
+    }
 }
