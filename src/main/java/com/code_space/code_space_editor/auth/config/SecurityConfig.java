@@ -43,6 +43,7 @@ public class SecurityConfig {
                         "/ws/**", "/index.html", "/static/**",
                         "/topic/**", "/app/**",
                         "/favicon.ico",
+                        "/actuator/health",
         };
 
         @Value("${FRONT_END_URL}")
