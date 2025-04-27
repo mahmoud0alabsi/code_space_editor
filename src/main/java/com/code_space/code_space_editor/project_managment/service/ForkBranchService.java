@@ -3,7 +3,6 @@ package com.code_space.code_space_editor.project_managment.service;
 import java.time.Instant;
 
 import com.code_space.code_space_editor.exceptions.ResourceNotFoundException;
-import com.code_space.code_space_editor.project_managment.concurrency.ConcurrencyService;
 import com.code_space.code_space_editor.project_managment.entity.sql.Branch;
 import com.code_space.code_space_editor.project_managment.entity.sql.Commit;
 import com.code_space.code_space_editor.project_managment.repository.BranchRepository;
@@ -21,7 +20,6 @@ import com.code_space.code_space_editor.project_managment.service.utils.CommitSe
 @Service
 @RequiredArgsConstructor
 public class ForkBranchService {
-    private final ConcurrencyService concurrencyService;
     private final CommitRepository commitRepository;
     private final BranchRepository branchRepository;
     private final CommitServiceUtils commitServiceUtils;
