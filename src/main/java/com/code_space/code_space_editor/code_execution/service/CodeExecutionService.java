@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.nio.file.*;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -64,6 +65,11 @@ public class CodeExecutionService {
             String fileName = getMainFileName(language);
             Path codeFile = tempDir.resolve(fileName);
             Files.writeString(codeFile, code);
+
+            Files.setPosixFilePermissions(codeFile, Set.of(
+                    PosixFilePermission.OWNER_READ,
+                    PosixFilePermission.OWNER_WRITE,
+                    PosixFilePermission.OTHERS_READ));
 
             // Create a script to run the code based on language
             String dockerCommand = getDockerCommand(language, fileName);
