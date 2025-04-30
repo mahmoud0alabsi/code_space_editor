@@ -30,7 +30,9 @@ services:
       - codespace-net
     volumes:
       - backend_uploads:/uploads
+      - /var/run/docker.sock:/var/run/docker.sock
     restart: always
+    privileged: true
 
 volumes:
   mysql_data_cse:
