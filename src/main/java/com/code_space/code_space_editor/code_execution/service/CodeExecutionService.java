@@ -6,7 +6,6 @@ import com.code_space.code_space_editor.code_execution.dto.CodeExecutionResult;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -24,11 +23,7 @@ public class CodeExecutionService {
             "python",
             "cpp",
             "c",
-            "csharp",
-            "go",
-            "ruby",
-            "php",
-            "rust");
+            "csharp");
 
     public CodeExecutionResult executeCode(String code, String language, List<String> args, Integer timeoutSeconds) {
         CodeExecutionResult result = new CodeExecutionResult();
@@ -39,41 +34,44 @@ public class CodeExecutionService {
             return result;
         }
 
-        // Apply system limits or use defaults
         int timeout = timeoutSeconds != null ? Math.min(timeoutSeconds, execProps.getMaxTimeoutSeconds())
                 : execProps.getDefaultTimeoutSeconds();
 
-        return executeInDocker(code, language, args, timeout);
+        return executeInContainer(code, language, args, timeout);
     }
 
-    public CodeExecutionResult executeInDocker(String code, String language, List<String> args, int timeoutSeconds) {
+    public CodeExecutionResult executeInContainer(String code, String language, List<String> args, int timeoutSeconds) {
         CodeExecutionResult result = new CodeExecutionResult();
         result.setSuccess(false);
-
         long startTime = System.currentTimeMillis();
 
         try {
-            String executionCommand = getDirectExecutionCommand(language, code, args);
+            // Get the appropriate execution strategy based on language
+            ExecutionStrategy strategy = getExecutionStrategy(language, code, args);
 
-            List<String> command = new ArrayList<>();
-            command.addAll(List.of(
+            // Build the container command
+            List<String> command = new ArrayList<>(List.of(
                     "docker", "run", "-i", "--rm",
                     "--memory=" + execProps.getMemoryLimit() + "m",
                     "--cpus=" + execProps.getCpuLimit(),
                     "--network=none",
-                    getDockerImage(language),
-                    "/bin/sh", "-c", executionCommand));
+                    getDockerImage(language)));
+
+            // Add the execution command
+            command.addAll(strategy.getCommand());
 
             ProcessBuilder pb = new ProcessBuilder(command);
             Process process = pb.start();
 
-            if (language.equalsIgnoreCase("python") && code.contains("\n")) {
+            // Write code to STDIN if needed
+            if (strategy.requiresStdin()) {
                 try (OutputStream os = process.getOutputStream()) {
                     os.write(code.getBytes());
                     os.flush();
                 }
             }
 
+            // Read output with timeout
             Future<String> stdoutFuture = readProcessOutputAsync(process.getInputStream());
             Future<String> stderrFuture = readProcessOutputAsync(process.getErrorStream());
 
@@ -86,10 +84,11 @@ public class CodeExecutionService {
             result.setStderr(stderrFuture.get(5, TimeUnit.SECONDS));
             result.setExitCode(process.exitValue());
             result.setSuccess(process.exitValue() == 0);
+
         } catch (TimeoutException e) {
             result.setErrorMessage("Execution timed out");
             result.setStderr("Your code execution exceeded the time limit");
-        } catch (IOException | InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
             result.setErrorMessage("Execution error: " + e.getMessage());
             result.setStderr(e.toString());
         } finally {
@@ -99,52 +98,57 @@ public class CodeExecutionService {
         return result;
     }
 
-    private String getDirectExecutionCommand(String language, String code, List<String> args) {
-        String sanitizedCode = code.replace("'", "'\\''");
+    private ExecutionStrategy getExecutionStrategy(String language, String code, List<String> args) {
         String argsStr = args != null ? String.join(" ", args) : "";
+        String sanitizedCode = code.replace("'", "'\\''");
 
         return switch (language.toLowerCase()) {
-            case "python" ->
-                code.contains("\n")
-                        ? "cat > /tmp/script.py && python /tmp/script.py " + argsStr
-                        : "python -c '" + sanitizedCode + "' " + argsStr;
+            case "python" -> code.contains("\n")
+                    ? new ExecutionStrategy(
+                            List.of("/bin/sh", "-c", "cat > /tmp/script.py && python /tmp/script.py " + argsStr),
+                            true)
+                    : new ExecutionStrategy(List.of("python", "-c", code, argsStr), false);
 
             case "javascript" ->
-                "node -e '" + sanitizedCode + "' " + argsStr;
+                new ExecutionStrategy(List.of("node", "-e", code, argsStr), false);
 
             case "java" ->
-                "echo '" + sanitizedCode + "' > Main.java && " +
-                        "javac Main.java && java Main " + argsStr;
+                new ExecutionStrategy(List.of("/bin/sh", "-c",
+                        "echo '" + sanitizedCode + "' > Main.java && " +
+                                "javac Main.java && java Main " + argsStr),
+                        false);
 
             case "cpp" ->
-                "echo '" + sanitizedCode + "' > main.cpp && " +
-                        "g++ main.cpp -o program && ./program " + argsStr;
+                new ExecutionStrategy(List.of("/bin/sh", "-c",
+                        "echo '" + sanitizedCode + "' > main.cpp && " +
+                                "g++ main.cpp -o program && ./program " + argsStr),
+                        false);
 
             case "c" ->
-                "echo '" + sanitizedCode + "' > main.c && " +
-                        "gcc main.c -o program && ./program " + argsStr;
+                new ExecutionStrategy(List.of("/bin/sh", "-c",
+                        "echo '" + sanitizedCode + "' > main.c && " +
+                                "gcc main.c -o program && ./program " + argsStr),
+                        false);
 
             case "csharp" ->
-                "echo '" + sanitizedCode + "' > Program.cs && " +
-                        "dotnet new console -o . --force && " +
-                        "dotnet run " + argsStr;
+                new ExecutionStrategy(List.of("/bin/sh", "-c",
+                        "echo '" + sanitizedCode + "' > Program.cs && " +
+                                "dotnet new console -o . --force && " +
+                                "dotnet run " + argsStr),
+                        false);
 
             default -> throw new IllegalArgumentException("Unsupported language: " + language);
         };
     }
 
     private String getDockerImage(String language) {
-        return switch (language) {
+        return switch (language.toLowerCase()) {
             case "java" -> "openjdk:17";
             case "javascript" -> "node:16";
             case "python" -> "python:3.9";
             case "cpp", "c" -> "gcc:11";
             case "csharp" -> "mcr.microsoft.com/dotnet/sdk:6.0";
-            case "go" -> "golang:1.18";
-            case "ruby" -> "ruby:3.1";
-            case "php" -> "php:8.1-cli";
-            case "rust" -> "rust:1.60";
-            default -> "ubuntu:latest";
+            default -> throw new IllegalArgumentException("Unsupported language: " + language);
         };
     }
 
@@ -155,17 +159,34 @@ public class CodeExecutionService {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     output.append(line).append("\n");
-
                     if (output.length() > execProps.getMaxOutputSize()) {
-                        output.append("\n... Output truncated (exceeded maximum size) ...");
+                        output.append("\n... Output truncated ...");
                         break;
                     }
                 }
                 return output.toString();
             } catch (IOException e) {
-                return "Error reading process output: " + e.getMessage();
+                return "Error reading output: " + e.getMessage();
             }
         });
     }
 
+    // Helper class to encapsulate execution strategy
+    private static class ExecutionStrategy {
+        private final List<String> command;
+        private final boolean requiresStdin;
+
+        public ExecutionStrategy(List<String> command, boolean requiresStdin) {
+            this.command = command;
+            this.requiresStdin = requiresStdin;
+        }
+
+        public List<String> getCommand() {
+            return command;
+        }
+
+        public boolean requiresStdin() {
+            return requiresStdin;
+        }
+    }
 }
