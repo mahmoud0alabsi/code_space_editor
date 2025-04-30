@@ -46,32 +46,30 @@ public class CodeExecutionService {
         long startTime = System.currentTimeMillis();
 
         try {
-            // Get the appropriate execution strategy based on language
-            ExecutionStrategy strategy = getExecutionStrategy(language, code, args);
+            // Get the execution command package
+            ExecutionCommand cmd = getExecutionCommand(language, code, args);
 
-            // Build the container command
+            // Build docker command
             List<String> command = new ArrayList<>(List.of(
                     "docker", "run", "-i", "--rm",
                     "--memory=" + execProps.getMemoryLimit() + "m",
                     "--cpus=" + execProps.getCpuLimit(),
                     "--network=none",
                     getDockerImage(language)));
-
-            // Add the execution command
-            command.addAll(strategy.getCommand());
+            command.addAll(cmd.getCommandParts());
 
             ProcessBuilder pb = new ProcessBuilder(command);
             Process process = pb.start();
 
-            // Write code to STDIN if needed
-            if (strategy.requiresStdin()) {
+            // Write to STDIN if needed
+            if (cmd.requiresStdin()) {
                 try (OutputStream os = process.getOutputStream()) {
                     os.write(code.getBytes());
                     os.flush();
                 }
             }
 
-            // Read output with timeout
+            // Read output
             Future<String> stdoutFuture = readProcessOutputAsync(process.getInputStream());
             Future<String> stderrFuture = readProcessOutputAsync(process.getErrorStream());
 
@@ -85,60 +83,68 @@ public class CodeExecutionService {
             result.setExitCode(process.exitValue());
             result.setSuccess(process.exitValue() == 0);
 
-        } catch (TimeoutException e) {
-            result.setErrorMessage("Execution timed out");
-            result.setStderr("Your code execution exceeded the time limit");
-        } catch (Exception e) {
+        } catch (IOException | InterruptedException | ExecutionException | TimeoutException e) {
             result.setErrorMessage("Execution error: " + e.getMessage());
             result.setStderr(e.toString());
         } finally {
             result.setExecutionTimeMs(System.currentTimeMillis() - startTime);
         }
-
         return result;
     }
 
-    private ExecutionStrategy getExecutionStrategy(String language, String code, List<String> args) {
+    private ExecutionCommand getExecutionCommand(String language, String code, List<String> args) {
         String argsStr = args != null ? String.join(" ", args) : "";
-        String sanitizedCode = code.replace("'", "'\\''");
+        String sanitizedCode = code.replace("'", "'\\''").replace("\n", "\\n");
 
-        return switch (language.toLowerCase()) {
-            case "python" -> code.contains("\n")
-                    ? new ExecutionStrategy(
+        switch (language.toLowerCase()) {
+            case "python":
+                if (code.contains("\n")) {
+                    // For multi-line Python, use /tmp/ with guaranteed permissions
+                    return new ExecutionCommand(
                             List.of("/bin/sh", "-c", "cat > /tmp/script.py && python /tmp/script.py " + argsStr),
-                            true)
-                    : new ExecutionStrategy(List.of("python", "-c", code, argsStr), false);
-
-            case "javascript" ->
-                new ExecutionStrategy(List.of("node", "-e", code, argsStr), false);
-
-            case "java" ->
-                new ExecutionStrategy(List.of("/bin/sh", "-c",
-                        "echo '" + sanitizedCode + "' > Main.java && " +
-                                "javac Main.java && java Main " + argsStr),
+                            true);
+                }
+                return new ExecutionCommand(
+                        List.of("python", "-c", code, argsStr),
                         false);
 
-            case "cpp" ->
-                new ExecutionStrategy(List.of("/bin/sh", "-c",
-                        "echo '" + sanitizedCode + "' > main.cpp && " +
-                                "g++ main.cpp -o program && ./program " + argsStr),
+            case "javascript":
+                return new ExecutionCommand(
+                        List.of("node", "-e", code, argsStr),
                         false);
 
-            case "c" ->
-                new ExecutionStrategy(List.of("/bin/sh", "-c",
-                        "echo '" + sanitizedCode + "' > main.c && " +
-                                "gcc main.c -o program && ./program " + argsStr),
+            case "java":
+                return new ExecutionCommand(
+                        List.of("/bin/sh", "-c",
+                                "echo -e '" + sanitizedCode + "' > Main.java && " +
+                                        "javac Main.java && java Main " + argsStr),
                         false);
 
-            case "csharp" ->
-                new ExecutionStrategy(List.of("/bin/sh", "-c",
-                        "echo '" + sanitizedCode + "' > Program.cs && " +
-                                "dotnet new console -o . --force && " +
-                                "dotnet run " + argsStr),
+            case "cpp":
+                return new ExecutionCommand(
+                        List.of("/bin/sh", "-c",
+                                "echo -e '" + sanitizedCode + "' > main.cpp && " +
+                                        "g++ main.cpp -o program && ./program " + argsStr),
                         false);
 
-            default -> throw new IllegalArgumentException("Unsupported language: " + language);
-        };
+            case "c":
+                return new ExecutionCommand(
+                        List.of("/bin/sh", "-c",
+                                "echo -e '" + sanitizedCode + "' > main.c && " +
+                                        "gcc main.c -o program && ./program " + argsStr),
+                        false);
+
+            case "csharp":
+                return new ExecutionCommand(
+                        List.of("/bin/sh", "-c",
+                                "echo -e '" + sanitizedCode + "' > Program.cs && " +
+                                        "dotnet new console -o . --force && " +
+                                        "dotnet run " + argsStr),
+                        false);
+
+            default:
+                throw new IllegalArgumentException("Unsupported language: " + language);
+        }
     }
 
     private String getDockerImage(String language) {
@@ -172,17 +178,17 @@ public class CodeExecutionService {
     }
 
     // Helper class to encapsulate execution strategy
-    private static class ExecutionStrategy {
-        private final List<String> command;
+    private static class ExecutionCommand {
+        private final List<String> commandParts;
         private final boolean requiresStdin;
 
-        public ExecutionStrategy(List<String> command, boolean requiresStdin) {
-            this.command = command;
+        public ExecutionCommand(List<String> commandParts, boolean requiresStdin) {
+            this.commandParts = commandParts;
             this.requiresStdin = requiresStdin;
         }
 
-        public List<String> getCommand() {
-            return command;
+        public List<String> getCommandParts() {
+            return commandParts;
         }
 
         public boolean requiresStdin() {
