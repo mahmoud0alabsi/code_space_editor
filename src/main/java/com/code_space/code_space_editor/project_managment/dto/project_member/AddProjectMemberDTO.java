@@ -12,8 +12,8 @@ import lombok.AllArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AddProjectMemberDTO {
-    @NotNull(message = "User ID must not be null")
-    private Long userId;
+    @NotNull(message = "Username must not be null")
+    private String username;
 
     @NotNull(message = "Role must not be null")
     private ProjectRole role;

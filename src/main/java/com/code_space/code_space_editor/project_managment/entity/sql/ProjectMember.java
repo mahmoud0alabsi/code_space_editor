@@ -35,6 +35,7 @@ public class ProjectMember {
     private Project project;
 
     private Long userId;
+    private String username;
 
     @Enumerated(EnumType.STRING)
     private ProjectRole role;

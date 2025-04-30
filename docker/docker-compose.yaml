@@ -15,19 +15,5 @@ services:
     volumes:
       - mysql_data_cse:/var/lib/mysql
     
-  mongodb:
-    image: mongo:6.0
-    container_name: mongo-container-cse
-    restart: always
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_DATABASE: code_space_editor_mongo
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: root
-    volumes:
-      - mongo_data_cse:/data/db
-
 volumes:
   mysql_data_cse:
-  mongo_data_cse:

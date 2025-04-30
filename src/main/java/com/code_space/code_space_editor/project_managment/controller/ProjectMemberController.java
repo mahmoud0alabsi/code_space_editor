@@ -46,19 +46,19 @@ public class ProjectMemberController {
                         @RequestBody @Valid AddProjectMemberDTO dto) {
                 projectMemberService.add(
                                 projectId,
-                                dto.getUserId(),
+                                dto.getUsername(),
                                 dto.getRole());
                 return ResponseEntity.status(HttpStatus.CREATED).body(
                                 "Member added successfully");
         }
 
-        @DeleteMapping("/{memberId}")
+        @DeleteMapping("/{memberName}")
         @PreAuthorize("@permissionService.hasProjectPermission(#projectId, 'OWNER')")
         @Operation(summary = "Remove a member from a project")
         public ResponseEntity<String> removeMember(
                         @PathVariable Long projectId,
-                        @PathVariable Long memberId) {
-                projectMemberService.removeMemberFromProject(projectId, memberId);
+                        @PathVariable String memberName) {
+                projectMemberService.removeMemberFromProject(projectId, memberName);
                 return ResponseEntity.ok("Member removed successfully");
         }
 
@@ -71,7 +71,7 @@ public class ProjectMemberController {
 
                 projectMemberService.changeRole(
                                 projectId,
-                                dto.getUserId(),
+                                dto.getUsername(),
                                 dto.getRole());
                 return ResponseEntity.ok("Member role updated successfully");
         }

@@ -45,6 +45,7 @@ public class ProjectService {
         ProjectMember ownerMember = ProjectMember.builder()
                 .project(newProject)
                 .userId(newProject.getOwnerId())
+                .username(newProject.getOwnerName())
                 .role(ProjectRole.OWNER)
                 .build();
         projectMemberRepository.save(ownerMember);

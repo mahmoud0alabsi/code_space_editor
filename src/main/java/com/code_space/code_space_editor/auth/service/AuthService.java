@@ -29,6 +29,14 @@ public class AuthService {
 
         @Transactional
         public void register(RegisterRequest request) {
+                if (userRepository.existsByUsername(request.getUsername())) {
+                        throw new IllegalArgumentException("Username '" + request.getUsername() + "' already exists");
+                }
+
+                if (userRepository.existsByEmail(request.getEmail())) {
+                        throw new IllegalArgumentException("Email '" + request.getEmail() + "' already exists");
+                }
+
                 var user = User.builder()
                                 .username(request.getUsername())
                                 .email(request.getEmail())

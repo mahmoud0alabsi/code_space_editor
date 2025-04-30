@@ -14,6 +14,9 @@ public class ProjectMemberDTO {
     @NotNull(message = "User ID must not be null")
     private Long userId;
 
+    @NotNull(message = "Username must not be null")
+    private String username;
+
     @NotNull(message = "Role must not be null")
     private ProjectRole role;
 }
