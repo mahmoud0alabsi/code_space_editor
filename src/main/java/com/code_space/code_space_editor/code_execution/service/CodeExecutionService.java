@@ -64,12 +64,17 @@ public class CodeExecutionService {
             tempDir = Files.createTempDirectory("docker_execution_");
             String fileName = getMainFileName(language);
             Path codeFile = tempDir.resolve(fileName);
-            Files.writeString(codeFile, code);
+            // Files.writeString(codeFile, code);
 
-            Files.setPosixFilePermissions(codeFile, Set.of(
-                    PosixFilePermission.OWNER_READ,
-                    PosixFilePermission.OWNER_WRITE,
-                    PosixFilePermission.OTHERS_READ));
+            // Write code with proper permissions
+            Files.writeString(codeFile, code,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+            Files.setPosixFilePermissions(codeFile,
+                    Set.of(PosixFilePermission.OWNER_READ,
+                            PosixFilePermission.OWNER_WRITE,
+                            PosixFilePermission.GROUP_READ,
+                            PosixFilePermission.OTHERS_READ));
 
             // Create a script to run the code based on language
             String dockerCommand = getDockerCommand(language, fileName);
@@ -86,7 +91,7 @@ public class CodeExecutionService {
                     // Network isolation
                     "--network=none",
                     // Mount code directory
-                    "-v", tempDir.toAbsolutePath() + ":/app",
+                    "-v", tempDir.toAbsolutePath() + ":/app:ro",
                     // Set working directory
                     "-w", "/app",
                     // Image to use
